@@ -27,6 +27,17 @@ body {
   flex-direction: column;
 }
 
+.page-doxology {
+  padding: 0.65rem 1.25rem;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  background: rgba(45, 157, 143, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 a {
   color: var(--link);
   text-decoration: none;
