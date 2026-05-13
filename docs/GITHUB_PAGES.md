@@ -10,6 +10,7 @@
 |------|-----|
 | Marketing URL | `https://mrnoh99.github.io/ListenToBibleWeb/` |
 | Support URL | `https://mrnoh99.github.io/ListenToBibleWeb/support.html` |
+| 개인정보 처리방침 | `https://mrnoh99.github.io/ListenToBibleWeb/privacy.html` |
 
 (조직 페이지나 커스텀 도메인을 쓰면 위 주소를 그에 맞게 바꿉니다.)
 
@@ -25,7 +26,7 @@
 
 - `index.html`: App Store 링크(승인 후 실제 URL)
 - `support.html`: 지원 이메일은 `jsnoh2010@gmail.com` 로 설정되어 있습니다.
-- 필요 시 개인정보 처리방침 링크 추가
+- App Store **앱 개인정보** 항목에 `privacy.html` 전체 URL을 넣을 수 있습니다.
 
 ## 참고
 
