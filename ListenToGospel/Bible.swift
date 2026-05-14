@@ -1,6 +1,6 @@
 //
 //  Bible.swift
-//  ListenToBible
+//  ListenToGospel
 //
 //  Created by NohJaisung on 5/12/26.
 //

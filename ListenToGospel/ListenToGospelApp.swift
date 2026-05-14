@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct ListenToBibleApp: App {
+struct ListenToGospelApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
