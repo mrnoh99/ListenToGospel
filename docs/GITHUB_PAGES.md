@@ -4,13 +4,13 @@
 
 ## 게시 후 사용할 URL 예시
 
-저장소 이름이 `ListenToBibleWeb`이고 GitHub 사용자명이 `mrnoh99`일 때:
+저장소 이름이 `ListenToGospel`이고 GitHub 사용자명이 `mrnoh99`일 때:
 
 | 용도 | URL |
 |------|-----|
-| Marketing URL | `https://mrnoh99.github.io/ListenToBibleWeb/` |
-| Support URL | `https://mrnoh99.github.io/ListenToBibleWeb/support.html` |
-| 개인정보 처리방침 | `https://mrnoh99.github.io/ListenToBibleWeb/privacy.html` |
+| Marketing URL | `https://mrnoh99.github.io/ListenToGospel/` |
+| Support URL | `https://mrnoh99.github.io/ListenToGospel/support.html` |
+| 개인정보 처리방침 | `https://mrnoh99.github.io/ListenToGospel/privacy.html` |
 
 (조직 페이지나 커스텀 도메인을 쓰면 위 주소를 그에 맞게 바꿉니다.)
 

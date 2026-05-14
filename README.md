@@ -1,4 +1,4 @@
-﻿# ListenToBibleWeb
+﻿# ListenToGospel
 
 이 저장소에는 **ListenToGospel** iOS 앱 전체 프로젝트(Xcode)·오디오 자산과, **GitHub Pages**용 정적 페이지(`docs/`)가 함께 있습니다.
 
@@ -6,9 +6,9 @@
 
 저장소 **Settings → Pages** 에서 Branch **main**, Folder **`/docs`** 를 선택하세요.
 
-- 마케팅: https://mrnoh99.github.io/ListenToBibleWeb/
-- 지원: https://mrnoh99.github.io/ListenToBibleWeb/support.html
-- 개인정보 처리방침: https://mrnoh99.github.io/ListenToBibleWeb/privacy.html
+- 마케팅: https://mrnoh99.github.io/ListenToGospel/
+- 지원: https://mrnoh99.github.io/ListenToGospel/support.html
+- 개인정보 처리방침: https://mrnoh99.github.io/ListenToGospel/privacy.html
 
 상세 설정은 [`docs/GITHUB_PAGES.md`](docs/GITHUB_PAGES.md) 를 참고하세요.
 
