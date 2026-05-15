@@ -11,14 +11,21 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var player = BiblePlayerStore.shared.viewModel
     @State private var isSleepTimerPickerPresented = false
-    @ScaledMetric(relativeTo: .title2) private var sleepTimerLineMinHeight: CGFloat = 30
+    @ScaledMetric(relativeTo: .subheadline) private var sleepTimerLineMinHeight: CGFloat = 16
     @ScaledMetric(relativeTo: .body) private var chapterListRowEstimate: CGFloat = 54
-    @ScaledMetric(relativeTo: .title3) private var gospelGridCellMinHeight: CGFloat = 56
-    @ScaledMetric(relativeTo: .title2) private var sleepTimerGridCellMinHeight: CGFloat = 68
-    private let gospelColumns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
+    @ScaledMetric(relativeTo: .title3) private var gospelGridCellMinHeight: CGFloat = 48
+    @ScaledMetric(relativeTo: .title2) private var sleepTimerGridCellMinHeight: CGFloat = 58
+    @ScaledMetric(relativeTo: .body) private var gospelGridSpacing: CGFloat = 8
+    @ScaledMetric(relativeTo: .body) private var topContentInset: CGFloat = 24
+    @ScaledMetric(relativeTo: .body) private var bottomContentInset: CGFloat = 56
+    @ScaledMetric(relativeTo: .caption2) private var footerBarHeight: CGFloat = 28
+
+    private var gospelColumns: [GridItem] {
+        [
+            GridItem(.flexible(), spacing: gospelGridSpacing),
+            GridItem(.flexible(), spacing: gospelGridSpacing)
+        ]
+    }
 
     private static let sleepTimerTimedOptions: [BiblePlayerViewModel.SleepTimerOption] = [
         .thirtyMinutes,
@@ -31,35 +38,29 @@ struct ContentView: View {
     private let playingChapterIconColor = Color.teal
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            VStack(spacing: 20) {
-                Text("복음서듣기")
-                    .font(.largeTitle.bold())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityAddTraits(.isHeader)
+        GeometryReader { geometry in
+            let scrollMinHeight = max(0, geometry.size.height - footerBarHeight)
 
-                sectionHeader("복음 선택")
-                gospelPicker
-                selectedGospelSummary
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        Spacer(minLength: topContentInset)
 
-                sectionHeader("장 목록")
-                chapterListSection
+                        mainContent
 
-                sectionHeader("재생 제어")
-                launchResumeOfferBanner
-                playbackControls
-                playbackMessage
-                Spacer(minLength: 0)
+                        Spacer(minLength: bottomContentInset)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: scrollMinHeight)
+                }
+                .scrollIndicators(.hidden)
+
+                footerBar
+                    .frame(height: footerBarHeight)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-
-            Text("by njs 2026")
-                .font(.system(size: 8))
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.background)
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active || newPhase == .inactive || newPhase == .background {
@@ -75,12 +76,33 @@ struct ContentView: View {
         }
     }
 
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.headline)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityAddTraits(.isHeader)
+    private var footerBar: some View {
+        Text("by njs 2026")
+            .font(.system(size: 8))
+            .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .accessibilityHidden(true)
+    }
+
+    private var mainContent: some View {
+        VStack(spacing: 16) {
+            Text("복음서듣기")
+                .font(.largeTitle.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityAddTraits(.isHeader)
+
+            gospelPicker
+            selectedGospelSummary
+
+            chapterList
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("장 목록")
+
+            launchResumeOfferBanner
+            playbackControls
+            playbackMessage
+        }
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -104,13 +126,13 @@ struct ContentView: View {
     }
 
     private var gospelPicker: some View {
-        LazyVGrid(columns: gospelColumns, spacing: 12) {
+        LazyVGrid(columns: gospelColumns, spacing: gospelGridSpacing) {
             ForEach(Bible.Gospel.allCases) { gospel in
                 Button {
                     player.selectGospelInGrid(gospel)
                 } label: {
                     Text(gospel.shortName)
-                        .font(.title3.bold())
+                        .font(.body.bold())
                         .frame(maxWidth: .infinity, minHeight: gospelGridCellMinHeight)
                         .foregroundStyle(player.selectedGospel == gospel ? .white : .primary)
                         .background(
@@ -131,22 +153,28 @@ struct ContentView: View {
     }
 
     private var selectedGospelSummary: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(player.selectedGospel.koreanName)
-                    .font(.largeTitle.bold())
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.7)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(player.selectedGospel.koreanName)
+                        .font(.title2.bold())
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
 
-                Text("총 \(player.selectedGospel.chapterCount)장")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    Text("총 \(player.selectedGospel.chapterCount)장")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(player.selectedGospel.koreanName), 총 \(player.selectedGospel.chapterCount)장")
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                sleepTimerSelectionTriggerButton
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(player.selectedGospel.koreanName), 총 \(player.selectedGospel.chapterCount)장")
-            .frame(maxWidth: .infinity, alignment: .leading)
 
-            sleepTimerSelectionTriggerButton
+            sleepTimerSummary
+                .frame(maxWidth: .infinity, minHeight: sleepTimerLineMinHeight, alignment: .center)
+                .padding(.top, -6)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -173,7 +201,7 @@ struct ContentView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    LazyVGrid(columns: gospelColumns, spacing: 12) {
+                    LazyVGrid(columns: gospelColumns, spacing: gospelGridSpacing) {
                         ForEach(Self.sleepTimerTimedOptions) { option in
                             sleepTimerOptionButton(option) {
                                 isSleepTimerPickerPresented = false
@@ -232,7 +260,7 @@ struct ContentView: View {
         if let endDate = player.sleepTimerEndDate {
             TimelineView(.periodic(from: .now, by: 1)) { timeline in
                 Text("남은 시간: \(sleepTimerRemainingText(until: endDate, now: timeline.date))")
-                    .font(.title2.bold())
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -241,7 +269,7 @@ struct ContentView: View {
             }
         } else {
             Text("남은 시간: ∞")
-                .font(.title2.bold())
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -288,15 +316,6 @@ struct ContentView: View {
             return formatPlaybackTime(elapsed)
         }
         return "\(formatPlaybackTime(elapsed)) / \(formatPlaybackTime(total))"
-    }
-
-    private var chapterListSection: some View {
-        VStack(spacing: 8) {
-            sleepTimerSummary
-                .frame(maxWidth: .infinity, minHeight: sleepTimerLineMinHeight, alignment: .center)
-            chapterList
-        }
-        .accessibilityElement(children: .contain)
     }
 
     @ViewBuilder
@@ -378,13 +397,19 @@ struct ContentView: View {
                 .accessibilityIdentifier(chapter.id)
             }
             .id(player.selectedGospel)
-            .frame(height: 210 + 2 * chapterListRowEstimate)
+            .listStyle(.plain)
+            .contentMargins(.vertical, 0, for: .scrollContent)
+            .scrollContentBackground(.hidden)
+            .frame(height: 210 + 2 * chapterListRowEstimate, alignment: .top)
             .environment(\.defaultMinListRowHeight, 52)
             .clipShape(RoundedRectangle(cornerRadius: 16))
+            .onAppear {
+                scrollToTopOfChapterList(for: player.selectedGospel, with: proxy)
+            }
             .onChange(of: player.selectedGospel) { _, gospel in
                 Task { @MainActor in
                     await Task.yield()
-                    scrollToChapter(listAnchorChapter(for: gospel), with: proxy)
+                    scrollToTopOfChapterList(for: gospel, with: proxy)
                 }
             }
             .onChange(of: player.currentPlayingChapter) { _, chapter in
@@ -456,19 +481,18 @@ struct ContentView: View {
         }
     }
 
-    private func listAnchorChapter(for gospel: Bible.Gospel) -> BibleChapter {
-        if let playing = player.currentPlayingChapter, playing.gospel == gospel {
-            return playing
-        }
-        if player.selectedChapter.gospel == gospel {
-            return player.selectedChapter
-        }
-        return gospel.chapters[0]
+    private func scrollToTopOfChapterList(for gospel: Bible.Gospel, with proxy: ScrollViewProxy) {
+        guard let firstChapter = gospel.chapters.first else { return }
+        scrollToChapter(firstChapter, with: proxy, anchor: .top)
     }
 
-    private func scrollToChapter(_ chapter: BibleChapter, with proxy: ScrollViewProxy) {
+    private func scrollToChapter(
+        _ chapter: BibleChapter,
+        with proxy: ScrollViewProxy,
+        anchor: UnitPoint = .top
+    ) {
         withAnimation {
-            proxy.scrollTo(chapter.id, anchor: .center)
+            proxy.scrollTo(chapter.id, anchor: anchor)
         }
     }
 
