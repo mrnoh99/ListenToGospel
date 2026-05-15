@@ -48,7 +48,7 @@ final class BiblePlayerViewModel: ObservableObject {
     @Published var selectedGospel: Bible.Gospel = .matthew {
         didSet {
             guard oldValue != selectedGospel else { return }
-            resumeBookmark = nil
+            // Keep `resumeBookmark` when browsing other gospels while stopped so Play resumes the stopped track.
             if let playing = currentPlayingChapter, playing.gospel == selectedGospel {
                 selectedChapter = playing
             } else {
@@ -62,6 +62,7 @@ final class BiblePlayerViewModel: ObservableObject {
         didSet {
             guard oldValue != sleepTimerOption else { return }
             scheduleSleepTimerIfNeeded()
+            AccessibilitySupport.announce("수면 타이머, \(sleepTimerOption.accessibilityLabel)")
         }
     }
 
@@ -95,6 +96,11 @@ final class BiblePlayerViewModel: ObservableObject {
     private var resumeBookmark: PlaybackResumeBookmark?
     private var navigationSnapBackTask: Task<Void, Never>?
 
+    /// Whether stopping left a chapter position that Play can resume (for accessibility hints).
+    var resumeBookmarkAvailable: Bool {
+        resumeBookmark != nil
+    }
+
     func selectChapter(_ chapter: BibleChapter) {
         selectedChapter = chapter
     }
@@ -109,6 +115,9 @@ final class BiblePlayerViewModel: ObservableObject {
             return
         }
         selectedGospel = gospel
+        if !isPlaying {
+            AccessibilitySupport.announce("\(gospel.koreanName), 총 \(gospel.chapterCount)장")
+        }
         considerSchedulingNavigationSnapBackAfterBrowsing()
     }
 
@@ -130,6 +139,7 @@ final class BiblePlayerViewModel: ObservableObject {
         guard rebuildChapterQueue() else {
             isPlaying = false
             playbackMessage = "앱 번들에서 오디오 파일을 찾지 못했습니다."
+            AccessibilitySupport.announce(playbackMessage ?? "재생할 수 없습니다.")
             return
         }
 
@@ -157,6 +167,7 @@ final class BiblePlayerViewModel: ObservableObject {
         guard rebuildChapterQueue() else {
             isPlaying = false
             playbackMessage = "앱 번들에서 오디오 파일을 찾지 못했습니다."
+            AccessibilitySupport.announce(playbackMessage ?? "재생할 수 없습니다.")
             return false
         }
 
@@ -208,6 +219,14 @@ final class BiblePlayerViewModel: ObservableObject {
         playbackElapsedSeconds = 0
         playbackDurationSeconds = 0
         clearNowPlayingInfo()
+
+        if let bookmark = resumeBookmark {
+            let chapter = bookmark.chapter
+            let position = AccessibilitySupport.spokenDuration(CMTimeGetSeconds(bookmark.time))
+            AccessibilitySupport.announce("\(chapter.title) 정지. \(position) 위치에서 이어 들을 수 있습니다")
+        } else {
+            AccessibilitySupport.announce("정지")
+        }
     }
 
     /// Called when the app moves between foreground, inactive, or background while playback should continue (e.g. screen lock).
@@ -398,6 +417,10 @@ final class BiblePlayerViewModel: ObservableObject {
         updateCurrentPlayingChapter()
         requestScrollToCurrentChapter()
         scheduleSleepTimerIfNeeded()
+
+        if let chapter = currentPlayingChapter {
+            AccessibilitySupport.announce("\(chapter.title) 재생 시작")
+        }
     }
 
     private func addPlaybackObserver(for item: AVPlayerItem) {

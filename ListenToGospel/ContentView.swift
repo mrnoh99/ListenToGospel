@@ -36,8 +36,10 @@ struct ContentView: View {
                 Text("복음서듣기")
                     .font(.largeTitle.bold())
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityAddTraits(.isHeader)
 
                 gospelPicker
+                    .accessibilityLabel("복음서 선택")
                 selectedGospelSummary
                 chapterListSection
                 playbackControls
@@ -49,6 +51,7 @@ struct ContentView: View {
             Text("by njs 2026")
                 .font(.system(size: 8))
                 .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -79,6 +82,12 @@ struct ContentView: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(gospel.koreanName)
+                .accessibilityHint("두 번 탭하여 이 복음의 장 목록을 표시합니다")
+                .accessibilityValue(player.selectedGospel == gospel ? "선택됨" : "")
+                .accessibilityAddTraits(player.selectedGospel == gospel ? [.isButton, .isSelected] : .isButton)
+                .accessibilityIdentifier("gospel-\(gospel.accessibilitySuffix)")
             }
         }
     }
@@ -95,6 +104,8 @@ struct ContentView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(player.selectedGospel.koreanName), 총 \(player.selectedGospel.chapterCount)장")
             .frame(maxWidth: .infinity, alignment: .leading)
 
             sleepTimerSelectionTriggerButton
@@ -113,6 +124,10 @@ struct ContentView: View {
         .buttonStyle(.bordered)
         .controlSize(.large)
         .fixedSize(horizontal: true, vertical: false)
+        .accessibilityLabel("수면 타이머")
+        .accessibilityHint("두 번 탭하여 자동 정지 시간을 선택합니다")
+        .accessibilityValue(player.sleepTimerOption.accessibilityLabel)
+        .accessibilityIdentifier("sleep-timer-button")
     }
 
     private var sleepTimerPickerSheet: some View {
@@ -167,6 +182,10 @@ struct ContentView: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(option.accessibilityLabel)
+        .accessibilityHint("두 번 탭하여 수면 타이머로 설정합니다")
+        .accessibilityAddTraits(player.sleepTimerOption == option ? [.isButton, .isSelected] : .isButton)
     }
 
     @ViewBuilder
@@ -178,6 +197,8 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity, alignment: .center)
+                    .accessibilityLabel(sleepTimerRemainingAccessibilityLabel(until: endDate, now: timeline.date))
+                    .accessibilityAddTraits(.updatesFrequently)
             }
         } else {
             Text("남은 시간: ∞")
@@ -185,7 +206,13 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, alignment: .center)
+                .accessibilityLabel("수면 타이머 없음, 계속 재생")
         }
+    }
+
+    private func sleepTimerRemainingAccessibilityLabel(until endDate: Date, now: Date) -> String {
+        let remaining = max(0, endDate.timeIntervalSince(now))
+        return "수면 타이머 남은 시간 \(AccessibilitySupport.spokenDuration(remaining))"
     }
 
     private func sleepTimerRemainingText(until endDate: Date, now: Date) -> String {
@@ -230,6 +257,8 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, minHeight: sleepTimerLineMinHeight, alignment: .center)
             chapterList
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("장 목록")
     }
 
     @ViewBuilder
@@ -250,6 +279,7 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity)
         .animation(.linear(duration: 0.2), value: player.playbackElapsedSeconds)
+        .accessibilityHidden(true)
     }
 
     private var chapterList: some View {
@@ -274,6 +304,7 @@ struct ContentView: View {
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                                     .fixedSize()
+                                    .accessibilityHidden(true)
                             }
 
                             Spacer(minLength: 4)
@@ -281,9 +312,11 @@ struct ContentView: View {
                             if chapter == player.currentPlayingChapter {
                                 Image(systemName: "speaker.wave.2.fill")
                                     .foregroundStyle(playingChapterIconColor)
+                                    .accessibilityHidden(true)
                             } else if chapter == player.selectedChapter {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundStyle(.tint)
+                                    .accessibilityHidden(true)
                             }
                         }
 
@@ -298,6 +331,12 @@ struct ContentView: View {
                 .buttonStyle(.plain)
                 .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                 .listRowBackground(chapter == player.currentPlayingChapter ? playingChapterRowBackground : Color.clear)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(chapter.title)
+                .accessibilityHint("두 번 탭하여 이 장을 재생합니다")
+                .accessibilityValue(chapterRowAccessibilityValue(chapter))
+                .accessibilityAddTraits(chapter == player.currentPlayingChapter && player.isPlaying ? [.isButton, .isSelected] : .isButton)
+                .accessibilityIdentifier(chapter.id)
             }
             .id(player.selectedGospel)
             .frame(height: 210 + 2 * chapterListRowEstimate)
@@ -336,6 +375,34 @@ struct ContentView: View {
         }
         .buttonStyle(.borderedProminent)
         .tint(player.isPlaying ? .red : .accentColor)
+        .accessibilityLabel(player.isPlaying ? "정지" : "재생")
+        .accessibilityHint(playbackControlAccessibilityHint)
+        .accessibilityIdentifier("playback-button")
+    }
+
+    private var playbackControlAccessibilityHint: String {
+        if player.isPlaying {
+            return "두 번 탭하여 재생을 정지합니다"
+        }
+        if player.resumeBookmarkAvailable {
+            return "두 번 탭하여 정지했던 위치에서 이어 재생합니다"
+        }
+        return "두 번 탭하여 선택한 장부터 재생합니다"
+    }
+
+    private func chapterRowAccessibilityValue(_ chapter: BibleChapter) -> String {
+        if player.isPlaying, chapter == player.currentPlayingChapter {
+            if player.playbackDurationSeconds > 0 {
+                let elapsed = AccessibilitySupport.spokenDuration(player.playbackElapsedSeconds)
+                let total = AccessibilitySupport.spokenDuration(player.playbackDurationSeconds)
+                return "재생 중, \(elapsed) 경과, 전체 \(total)"
+            }
+            return "재생 중"
+        }
+        if chapter == player.selectedChapter {
+            return "선택됨"
+        }
+        return ""
     }
 
     @ViewBuilder
@@ -345,6 +412,7 @@ struct ContentView: View {
                 .font(.callout)
                 .foregroundStyle(.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel("알림, \(message)")
         }
     }
 

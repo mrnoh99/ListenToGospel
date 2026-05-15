@@ -34,6 +34,16 @@ struct Bible {
             }
         }
 
+        /// UI tests · App Store screenshot automation
+        var accessibilitySuffix: String {
+            switch self {
+            case .matthew: return "matthew"
+            case .mark: return "mark"
+            case .luke: return "luke"
+            case .john: return "john"
+            }
+        }
+
         var englishName: String {
             switch self {
             case .matthew: return "Gospel of Matthew"

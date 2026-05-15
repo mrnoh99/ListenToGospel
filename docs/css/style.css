@@ -207,3 +207,20 @@ footer nav a {
   color: var(--muted);
   margin-top: 0.5rem;
 }
+
+.accessibility-callout {
+  background: rgba(45, 157, 143, 0.12);
+  border: 1px solid rgba(45, 157, 143, 0.45);
+  border-radius: 12px;
+  padding: 1.25rem 1.35rem;
+  margin-bottom: 2rem;
+}
+
+.accessibility-callout h2 {
+  margin-top: 0;
+  color: var(--accent);
+}
+
+.accessibility-callout p:last-child {
+  margin-bottom: 0;
+}
