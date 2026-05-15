@@ -42,9 +42,10 @@
 
 ## 수정할 항목
 
-- `index.html`: App Store 링크(승인 후 실제 URL)
+- `index.html`: `#app-store-link` 의 `href` 를 승인 후 실제 App Store 앱 URL로 교체
 - `support.html`: 지원 이메일은 `jsnoh2010@gmail.com` 로 설정되어 있습니다.
 - App Store **앱 개인정보** 항목에 `privacy.html` 전체 URL을 넣을 수 있습니다.
+- 앱 표기명은 문서 전반에서 **복음서듣기** 로 통일되어 있습니다.
 
 ## 참고
 

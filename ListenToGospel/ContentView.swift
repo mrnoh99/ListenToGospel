@@ -201,6 +201,29 @@ struct ContentView: View {
         return String(format: "%d:%02d", minutes, secs)
     }
 
+    private func formatPlaybackTime(_ seconds: TimeInterval) -> String {
+        guard seconds.isFinite, seconds >= 0 else { return "0:00" }
+
+        let total = Int(seconds.rounded(.down))
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        let secs = total % 60
+
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, secs)
+        }
+        return String(format: "%d:%02d", minutes, secs)
+    }
+
+    private func playbackElapsedAndTotalText() -> String {
+        let elapsed = player.playbackElapsedSeconds
+        let total = player.playbackDurationSeconds
+        guard total > 0 else {
+            return formatPlaybackTime(elapsed)
+        }
+        return "\(formatPlaybackTime(elapsed)) / \(formatPlaybackTime(total))"
+    }
+
     private var chapterListSection: some View {
         VStack(spacing: 8) {
             sleepTimerSummary
@@ -238,11 +261,22 @@ struct ContentView: View {
                     player.play(chapter)
                 } label: {
                     VStack(alignment: .leading, spacing: 6) {
-                        HStack {
+                        HStack(spacing: 8) {
                             Text(chapter.title)
                                 .fontWeight(chapter == player.currentPlayingChapter ? .semibold : .regular)
+                                .lineLimit(1)
 
-                            Spacer()
+                            if player.isPlaying,
+                               chapter == player.currentPlayingChapter,
+                               player.playbackDurationSeconds > 0 {
+                                Text(playbackElapsedAndTotalText())
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .fixedSize()
+                            }
+
+                            Spacer(minLength: 4)
 
                             if chapter == player.currentPlayingChapter {
                                 Image(systemName: "speaker.wave.2.fill")

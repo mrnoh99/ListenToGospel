@@ -20,6 +20,25 @@
 
 로컬에서 `ListenToGospel.xcodeproj` 를 Xcode로 여세요.
 
+## App Store Connect
+
+| 항목 | 값 |
+|------|-----|
+| 앱 이름 | 복음서듣기 |
+| 번들 ID | `njs.ListenToGospel` |
+| 버전 | 1.0 (빌드 1) |
+| 마케팅 URL | https://mrnoh99.github.io/ListenToGospel/ |
+| 지원 URL | https://mrnoh99.github.io/ListenToGospel/support.html |
+| 개인정보 처리방침 URL | https://mrnoh99.github.io/ListenToGospel/privacy.html |
+
+**키워드** (100자 이내, 쉼표 구분):
+
+```
+성경,가톨릭,복음,듣기,오디오,성경듣기,수면,타이머,불면,숙면,잠자기,천주교,성당,불면증,잘자기,bible,복음서,gospel,catholic
+```
+
+**부제 예시**: 가톨릭 4복음을 장별로 듣는 오디오 앱
+
 ## 라이선스 · 저작권
 
 오디오 및 앱 재배포 정책은 사용 중인 원본 라이선스에 따릅니다.
