@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="가톨릭 4복음을 듣는 iOS 앱 복음서듣기. 시각장애인을 위한 Apple VoiceOver(화면 읽기) 지원 포함." />
-  <title>복음서듣기 — 가톨릭 복음 듣기 · VoiceOver 지원</title>
+  <meta name="description" content="가톨릭 4복음 듣기 iOS 앱 복음서듣기. VoiceOver·Voice Control·시리·햅틱·잠금 화면 이전·다음 장·이어 듣기 지원." />
+  <title>복음서듣기 — 가톨릭 복음 듣기 · VoiceOver · 시리</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="canonical" href="./" />
 </head>
@@ -12,7 +12,7 @@
   <p class="page-doxology">+ 찬미 예수님</p>
   <header>
     <h1>복음서듣기</h1>
-    <p class="tagline">가톨릭 성경복음을 듣는 iOS 앱 · <strong>시각장애인 VoiceOver 지원</strong></p>
+    <p class="tagline">가톨릭 성경복음을 듣는 iOS 앱 · <strong>VoiceOver</strong> · <strong>시리</strong> · <strong>손쉬운 사용</strong></p>
   </header>
 
   <main>
@@ -30,8 +30,20 @@
       </p>
       <p style="font-size: 0.95rem; color: var(--muted);">
         사용 방법: iPhone <strong>설정 → 손쉬운 사용 → VoiceOver</strong>를 켠 뒤 앱을 실행하세요.
-        자세한 안내는 <a href="support.html#voiceover">지원 페이지</a>를 참고해 주세요.
+        <strong>시리·단축어</strong> · <strong>Voice Control</strong> · <strong>햅틱</strong> 등
+        <a href="#accessibility-features">손쉬운 사용 기능</a> · <a href="support.html#accessibility-features">지원 페이지</a>를 참고해 주세요.
       </p>
+    </section>
+
+    <section class="accessibility-callout" id="accessibility-features" aria-labelledby="accessibility-features-heading">
+      <h2 id="accessibility-features-heading">손쉬운 사용 · 재생 편의</h2>
+      <ul class="features">
+        <li><strong>햅틱 피드백</strong>: 재생·정지·장이 바뀔 때 짧은 진동으로 상태를 확인합니다.</li>
+        <li><strong>Voice Control</strong>: 「재생 탭」「마태오 탭」처럼 음성만으로 버튼을 누를 수 있습니다.</li>
+        <li><strong>VoiceOver 제목(Rotor)</strong>: 「복음 선택」「장 목록」「재생 제어」로 구역을 나누어 탐색이 빠릅니다.</li>
+        <li><strong>이어 듣기 제안</strong>: 앱을 다시 열면 「이어서 마태오 5장 재생」을 한 번 탭해 이전 위치에서 재개합니다.</li>
+        <li><strong>잠금 화면·제어 센터</strong>: 재생 중 잠금 화면에서 <strong>이전 곡·다음 곡</strong>으로 장을 넘길 수 있습니다.</li>
+      </ul>
     </section>
 
     <section>
@@ -41,12 +53,61 @@
         이동 중이나 잠들기 전처럼 성경을 펼치기 어려울 때도 말씀에 귀 기울일 수 있도록
         단순한 화면과 재생에 집중했습니다.
       </p>
+      <p>
+        <strong>시리와 단축어</strong>로도 이용할 수 있습니다.
+        앱을 한 번 실행한 뒤 「마태오 3장 재생」, 「이어서 재생」, 「수면 타이머 30분」처럼
+        말로 재생을 시작하거나 멈출 수 있습니다.
+      </p>
+    </section>
+
+    <section class="siri-callout" id="siri" aria-labelledby="siri-heading">
+      <h2 id="siri-heading">시리 · 단축어로 말로 실행</h2>
+      <p>
+        App Intents를 지원합니다. 아래처럼 말하면 앱이 해당 동작을 수행합니다.
+        처음 사용 전에 앱을 한 번 실행해 주세요.
+      </p>
+      <div class="phrase-table-wrap">
+        <table class="phrase-table">
+          <caption>시리·단축어 말하기 예시와 동작</caption>
+          <thead>
+            <tr>
+              <th scope="col">말하기 예시</th>
+              <th scope="col">동작</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><code>복음서듣기에서 마태오 3장 재생</code></th>
+              <td>해당 장 재생</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>이어서 재생</code> (앱 이름 포함)</th>
+              <td>정지 위치에서 이어 듣기</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>수면 타이머 30분</code></th>
+              <td>30분 후 자동 정지</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>복음서듣기 정지</code></th>
+              <td>재생 정지</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size: 0.95rem; color: var(--muted); margin-top: 1rem;">
+        60·90·120분 타이머는 <strong>단축어</strong> 앱에서 「수면 타이머 설정」을 추가해 선택할 수 있습니다.
+        자세한 안내는 <a href="support.html#siri">지원 페이지</a>를 참고해 주세요.
+      </p>
     </section>
 
     <section>
       <h2>주요 기능</h2>
       <ul class="features">
         <li><strong>VoiceOver 지원</strong>: 복음·장·재생·수면 타이머를 음성으로 탐색·조작</li>
+        <li><strong>시리·단축어</strong>: 말로 장 재생, 이어 듣기, 수면 타이머, 정지</li>
+        <li><strong>Voice Control</strong>: 「재생 탭」「마태오 탭」 등 음성 명령으로 조작</li>
+        <li><strong>햅틱·이어 듣기 제안·잠금 화면 이전·다음 장</strong> (<a href="#accessibility-features">자세히</a>)</li>
         <li>4복음서중 원하는 복음과 장 선택 후 재생</li>
         <li>선택한 장부터 복음 끝까지 연속 재생</li>
         <li>지금 재생 중인 장을 목록에서 쉽게 확인</li>

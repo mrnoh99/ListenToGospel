@@ -77,6 +77,7 @@ final class BiblePlayerViewModel: ObservableObject {
     @Published private(set) var playbackElapsedSeconds: TimeInterval = 0
     /// Duration of the current `AVPlayerItem` when known (`> 0`); otherwise `0`.
     @Published private(set) var playbackDurationSeconds: TimeInterval = 0
+    @Published private(set) var launchResumeOffer: LaunchResumeOffer?
 
     private let player = AVQueuePlayer()
     private let supportedAudioExtensions = ["m4a", "mp3"]
@@ -95,6 +96,13 @@ final class BiblePlayerViewModel: ObservableObject {
 
     private var resumeBookmark: PlaybackResumeBookmark?
     private var navigationSnapBackTask: Task<Void, Never>?
+    private var launchResumeOfferDismissed = false
+    private var lastPersistedChapterID: String?
+    private var lastPersistedElapsed: TimeInterval = -1
+
+    init() {
+        refreshLaunchResumeOffer()
+    }
 
     /// Whether stopping left a chapter position that Play can resume (for accessibility hints).
     var resumeBookmarkAvailable: Bool {
@@ -103,6 +111,42 @@ final class BiblePlayerViewModel: ObservableObject {
 
     func selectChapter(_ chapter: BibleChapter) {
         selectedChapter = chapter
+    }
+
+    func refreshLaunchResumeOffer() {
+        guard !launchResumeOfferDismissed, !isPlaying, resumeBookmark == nil else {
+            launchResumeOffer = nil
+            return
+        }
+        guard let saved = PlaybackPersistence.load(),
+              let chapter = saved.chapter,
+              saved.elapsedSeconds >= 3 else {
+            launchResumeOffer = nil
+            return
+        }
+        launchResumeOffer = LaunchResumeOffer(chapter: chapter, elapsedSeconds: saved.elapsedSeconds)
+    }
+
+    func dismissLaunchResumeOffer() {
+        launchResumeOfferDismissed = true
+        launchResumeOffer = nil
+    }
+
+    @discardableResult
+    func resumeFromLaunchOffer() -> Bool {
+        guard let offer = launchResumeOffer else { return false }
+
+        launchResumeOfferDismissed = true
+        launchResumeOffer = nil
+
+        resumeBookmark = PlaybackResumeBookmark(
+            chapter: offer.chapter,
+            time: CMTime(seconds: offer.elapsedSeconds, preferredTimescale: 600)
+        )
+
+        guard resumePlaybackAfterStop() else { return false }
+        AccessibilitySupport.haptic(.play)
+        return true
     }
 
     func selectGospelInGrid(_ gospel: Bible.Gospel) {
@@ -115,6 +159,7 @@ final class BiblePlayerViewModel: ObservableObject {
             return
         }
         selectedGospel = gospel
+        AccessibilitySupport.haptic(.selection)
         if !isPlaying {
             AccessibilitySupport.announce("\(gospel.koreanName), 총 \(gospel.chapterCount)장")
         }
@@ -124,6 +169,7 @@ final class BiblePlayerViewModel: ObservableObject {
     func play(_ chapter: BibleChapter) {
         cancelNavigationSnapBack()
         resumeBookmark = nil
+        launchResumeOffer = nil
         selectedChapter = chapter
         playFromSelection()
     }
@@ -221,12 +267,49 @@ final class BiblePlayerViewModel: ObservableObject {
         clearNowPlayingInfo()
 
         if let bookmark = resumeBookmark {
+            persistPlayback(from: bookmark.chapter, elapsedSeconds: CMTimeGetSeconds(bookmark.time))
             let chapter = bookmark.chapter
             let position = AccessibilitySupport.spokenDuration(CMTimeGetSeconds(bookmark.time))
             AccessibilitySupport.announce("\(chapter.title) 정지. \(position) 위치에서 이어 들을 수 있습니다")
         } else {
             AccessibilitySupport.announce("정지")
         }
+
+        AccessibilitySupport.haptic(.stop)
+        refreshLaunchResumeOffer()
+    }
+
+    func skipToNextChapter() {
+        guard isPlaying, let currentItem = player.currentItem else { return }
+
+        let items = player.items()
+        guard let index = items.firstIndex(where: { $0 === currentItem }),
+              index + 1 < items.count else {
+            return
+        }
+
+        player.advanceToNextItem()
+        AccessibilitySupport.haptic(.chapterChange)
+        handlePotentialQueueItemTransition()
+    }
+
+    func skipToPreviousChapter() {
+        guard isPlaying, let chapter = currentPlayingChapter else { return }
+
+        let elapsed = player.currentTime().seconds
+        if elapsed.isFinite, elapsed > 3 {
+            player.seek(to: .zero) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.updateNowPlayingInfo()
+                    self?.refreshPlaybackProgressForUI()
+                }
+            }
+            return
+        }
+
+        guard chapter.number > 1 else { return }
+        let previous = chapter.gospel.chapters[chapter.number - 2]
+        play(previous)
     }
 
     /// Called when the app moves between foreground, inactive, or background while playback should continue (e.g. screen lock).
@@ -421,6 +504,8 @@ final class BiblePlayerViewModel: ObservableObject {
         if let chapter = currentPlayingChapter {
             AccessibilitySupport.announce("\(chapter.title) 재생 시작")
         }
+        AccessibilitySupport.haptic(.play)
+        launchResumeOffer = nil
     }
 
     private func addPlaybackObserver(for item: AVPlayerItem) {
@@ -468,13 +553,21 @@ final class BiblePlayerViewModel: ObservableObject {
         let currentItemID = player.currentItem.map(ObjectIdentifier.init)
 
         if currentItemID != lastObservedCurrentItemID {
+            let advancedToNewChapter = lastObservedCurrentItemID != nil
             lastObservedCurrentItemID = currentItemID
             updateCurrentPlayingChapter()
             requestScrollToCurrentChapter()
+            if advancedToNewChapter, isPlaying, currentItemID != nil {
+                AccessibilitySupport.haptic(.chapterChange)
+                if let chapter = currentPlayingChapter {
+                    AccessibilitySupport.announce(chapter.title)
+                }
+            }
         }
 
         updateNowPlayingInfo()
         refreshPlaybackProgressForUI()
+        persistPlaybackProgressIfNeeded()
     }
 
     private func updateCurrentPlayingChapter() {
@@ -592,6 +685,22 @@ final class BiblePlayerViewModel: ObservableObject {
             return .success
         }
 
+        commandCenter.nextTrackCommand.isEnabled = true
+        commandCenter.nextTrackCommand.addTarget { _ in
+            Task { @MainActor [weak self] in
+                self?.skipToNextChapter()
+            }
+            return .success
+        }
+
+        commandCenter.previousTrackCommand.isEnabled = true
+        commandCenter.previousTrackCommand.addTarget { _ in
+            Task { @MainActor [weak self] in
+                self?.skipToPreviousChapter()
+            }
+            return .success
+        }
+
         isRemoteCommandCenterConfigured = true
         #endif
     }
@@ -627,5 +736,26 @@ final class BiblePlayerViewModel: ObservableObject {
         #if canImport(MediaPlayer)
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         #endif
+    }
+
+    private func persistPlaybackProgressIfNeeded() {
+        guard isPlaying, let chapter = currentPlayingChapter else { return }
+
+        let elapsed = player.currentTime().seconds
+        guard elapsed.isFinite, elapsed >= 3 else { return }
+
+        let chapterID = chapter.id
+        if chapterID == lastPersistedChapterID,
+           abs(elapsed - lastPersistedElapsed) < 5 {
+            return
+        }
+
+        lastPersistedChapterID = chapterID
+        lastPersistedElapsed = elapsed
+        persistPlayback(from: chapter, elapsedSeconds: elapsed)
+    }
+
+    private func persistPlayback(from chapter: BibleChapter, elapsedSeconds: TimeInterval) {
+        PlaybackPersistence.save(chapter: chapter, elapsedSeconds: elapsedSeconds)
     }
 }

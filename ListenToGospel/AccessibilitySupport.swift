@@ -9,6 +9,13 @@ import UIKit
 #endif
 
 enum AccessibilitySupport {
+    enum Haptic {
+        case play
+        case stop
+        case chapterChange
+        case selection
+    }
+
     static func spokenDuration(_ seconds: TimeInterval) -> String {
         guard seconds.isFinite, seconds >= 0 else { return "0초" }
 
@@ -31,6 +38,35 @@ enum AccessibilitySupport {
         #if os(iOS)
         UIAccessibility.post(notification: .announcement, argument: message)
         #endif
+    }
+
+    static func haptic(_ kind: Haptic) {
+        #if os(iOS)
+        switch kind {
+        case .play:
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        case .stop:
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        case .chapterChange:
+            UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        case .selection:
+            UISelectionFeedbackGenerator().selectionChanged()
+        }
+        #endif
+    }
+}
+
+enum VoiceControlLabels {
+    static func gospel(_ gospel: Bible.Gospel) -> [String] {
+        [gospel.shortName, "\(gospel.shortName) 탭", gospel.koreanName]
+    }
+
+    static var playbackPlay: [String] { ["재생", "재생 탭"] }
+    static var playbackStop: [String] { ["정지", "정지 탭"] }
+    static var sleepTimer: [String] { ["시간 선택", "시간 선택 탭", "수면 타이머"] }
+
+    static func chapter(_ chapter: BibleChapter) -> [String] {
+        [chapter.title, "\(chapter.title) 탭", "\(chapter.gospel.shortName) \(chapter.number)장"]
     }
 }
 
