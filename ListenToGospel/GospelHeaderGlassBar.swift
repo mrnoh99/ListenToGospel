@@ -33,6 +33,7 @@ struct GospelHeaderGlassBar<SleepTimerLabel: View>: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityHidden(true)
 
             Button(action: onSleepTimerTap) {
                 Label {
