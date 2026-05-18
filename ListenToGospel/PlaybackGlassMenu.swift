@@ -61,7 +61,7 @@ struct PlaybackGlassMenu: View {
             } icon: {
                 Image(systemName: isPlaying ? "stop.fill" : "play.fill")
             }
-            .font(AppControlTypography.labelFont)
+            .font(AppControlTypography.prominentLabelFont)
             .labelStyle(.titleAndIcon)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())

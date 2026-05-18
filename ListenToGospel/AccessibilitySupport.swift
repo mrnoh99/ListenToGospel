@@ -12,6 +12,8 @@ import UIKit
 /// Shared label typography for gospel grid, header title, sleep timer, and playback.
 enum AppControlTypography {
     static let labelFont: Font = .body.weight(.semibold)
+    /// Larger label for primary controls (gospel grid cells and the play/stop button).
+    static let prominentLabelFont: Font = .title3.weight(.semibold)
 }
 
 /// Shared dimensions for 2×2 gospel cells and floating glass control bars.

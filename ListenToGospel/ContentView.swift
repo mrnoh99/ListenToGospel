@@ -205,7 +205,9 @@ struct ContentView: View {
                     player.selectGospelInGrid(gospel)
                 } label: {
                     Text(gospel.shortName)
-                        .font(AppControlTypography.labelFont)
+                        .font(AppControlTypography.prominentLabelFont)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity, minHeight: controlBarHeight)
                         .foregroundStyle(player.selectedGospel == gospel ? .white : .primary)
                         .background(
