@@ -185,11 +185,6 @@ final class BiblePlayerViewModel: ObservableObject {
             considerSchedulingNavigationSnapBackAfterBrowsing()
             return
         }
-        if isPlaying,
-           let playing = currentPlayingChapter,
-           playing.gospel != gospel {
-            pause()
-        }
         selectedGospel = gospel
         AccessibilitySupport.haptic(.selection)
         if stoppedResumeChapter(for: gospel) != nil {
