@@ -48,13 +48,6 @@ enum AccessibilitySupport {
         return "\(secs)초"
     }
 
-    static func announce(_ message: String) {
-        guard !message.isEmpty else { return }
-        #if os(iOS)
-        UIAccessibility.post(notification: .announcement, argument: message)
-        #endif
-    }
-
     static func haptic(_ kind: Haptic) {
         #if os(iOS)
         switch kind {
@@ -71,29 +64,3 @@ enum AccessibilitySupport {
     }
 }
 
-enum VoiceControlLabels {
-    static func gospel(_ gospel: Bible.Gospel) -> [String] {
-        [gospel.koreanName, gospel.shortName, "\(gospel.koreanName) 버튼", "\(gospel.shortName) 탭"]
-    }
-
-    static var playbackPlay: [String] { ["재생", "재생 탭"] }
-    static var playbackStop: [String] { ["정지", "정지 탭"] }
-    static var sleepTimer: [String] {
-        ["타이머", "타이머 버튼", "타이머버튼", "남은시간", "수면 타이머"]
-    }
-
-    static func chapter(_ chapter: BibleChapter) -> [String] {
-        [chapter.title, "\(chapter.title) 탭", chapter.shortTitle]
-    }
-}
-
-extension BiblePlayerViewModel.SleepTimerOption {
-    var accessibilityLabel: String {
-        switch self {
-        case .continuous:
-            return "계속 재생, 수면 타이머 없음"
-        default:
-            return "\(title) 후 자동 정지"
-        }
-    }
-}

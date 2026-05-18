@@ -12,9 +12,6 @@ struct ContentView: View {
     @ObservedObject private var player = BiblePlayerStore.shared.viewModel
     @State private var isSleepTimerPickerPresented = false
     @State private var controlsHeaderBottomOffset: CGFloat = 0
-    @Namespace private var controlsRotor
-    @Namespace private var chaptersRotor
-    @AccessibilityFocusState private var voiceOverFocus: VoiceOverNavigation.Focus?
     @ScaledMetric(relativeTo: .body) private var chapterListRowMinHeight: CGFloat = 58
     @ScaledMetric(relativeTo: .body) private var chapterListRowVerticalInset: CGFloat = 12
     @ScaledMetric(relativeTo: .title3) private var controlBarHeight: CGFloat = AppControlLayout.barHeight
@@ -60,34 +57,10 @@ struct ContentView: View {
                 selectSleepTimer: selectSleepTimer(_:),
                 onAppear: {
                     player.refreshLaunchResumeOffer()
-                    AccessibilityVoiceGuide.shared.presentIfNeeded()
                 },
                 reassertPlayback: { player.reassertAudioPlaybackIfNeeded() }
             ))
-            .voiceOverControlsRotor(focus: $voiceOverFocus, namespace: controlsRotor)
-            .voiceOverChaptersRotor(
-                focus: $voiceOverFocus,
-                namespace: chaptersRotor,
-                chapters: player.selectedGospel.chapters,
-                onFocusChapter: { chapter in
-                    player.focusChapterInList(chapter)
-                }
-            )
-            .voiceOverLayersRotor(
-                onMoveToControlsLayer: focusControlsLayerForVoiceOver,
-                onMoveToChaptersLayer: focusChaptersLayerForVoiceOver
-            )
-            .onChange(of: isSleepTimerPickerPresented) { wasPresented, isPresented in
-                if !wasPresented, isPresented {
-                    announceSleepTimerRemainingTimeOnce()
-                } else if wasPresented, !isPresented {
-                    restoreSleepTimerAccessibilityFocus()
-                }
-            }
             .onPreferenceChange(ControlsHeaderBottomOffsetKey.self) { controlsHeaderBottomOffset = $0 }
-            .onChange(of: player.selectedGospel) { _, gospel in
-                focusStoppedResumeChapter(for: gospel)
-            }
     }
 
     /// Top scroll inset: keeps chapter rows below the title and 2×2 grid (no overlap with 「복음서듣기」).
@@ -103,6 +76,8 @@ struct ContentView: View {
             + estimatedAppTitleHeight
             + headerSectionSpacing
             + (controlBarHeight * 2 + gospelGridSpacing)
+            + headerSectionSpacing
+            + controlBarHeight
             + headerBottomPadding
     }
 
@@ -134,18 +109,14 @@ struct ContentView: View {
         Text("복음서듣기")
             .font(.largeTitle.bold())
             .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityLabel(VoiceOverNavigation.appTitleAccessibilityLabel)
-            .accessibilityAddTraits(.isHeader)
-            .accessibilityFocused($voiceOverFocus, equals: .appTitle)
-            .accessibilityRotorEntry(id: VoiceOverNavigation.Focus.appTitle, in: controlsRotor)
-            .voiceOverControlsHorizontalBrowse(onBrowse: browseControlsForVoiceOver(forward:))
     }
 
-    /// Title + gospel grid; measured height is the chapter list top inset.
+    /// Title + gospel grid + sleep timer; measured height is the chapter list top inset.
     private var controlsHeaderChrome: some View {
         VStack(spacing: headerSectionSpacing) {
             appTitleView
             gospelPicker
+            sleepTimerRow
         }
         .padding(.top, topContentInset)
         .padding(.bottom, headerBottomPadding)
@@ -163,28 +134,18 @@ struct ContentView: View {
 
     private var chapterListWithFloatingControls: some View {
         ZStack(alignment: .top) {
-            chaptersAccessibilityRegion
-            controlsAccessibilityRegion
+            chapterList
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            floatingControlsOverlay
         }
     }
 
-    private var chaptersAccessibilityRegion: some View {
-        chapterList
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .accessibilitySortPriority(0)
-    }
-
-    private var controlsAccessibilityRegion: some View {
-        voiceOverControlsOverlay
-            .accessibilitySortPriority(1)
-    }
-
-    /// Single VoiceOver item group: title, 2×2 grid, sleep timer, previous · play/stop · next (gospel name excluded).
-    private var voiceOverControlsOverlay: some View {
+    private var floatingControlsOverlay: some View {
         VStack(spacing: 0) {
             controlsHeaderChrome
 
-            floatingGospelHeaderOverlay
+            floatingGospelHeaderFade
 
             Spacer(minLength: 0)
                 .allowsHitTesting(false)
@@ -192,30 +153,22 @@ struct ContentView: View {
             floatingPlaybackOverlay
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .voiceOverControlsLayerNavigation(
-            onBrowse: browseControlsForVoiceOver(forward:),
-            onMoveToChaptersLayer: focusChaptersLayerForVoiceOver
-        )
     }
 
-    private var floatingGospelHeaderOverlay: some View {
-        VStack(spacing: 0) {
-            gospelHeaderGlassBar
-                .padding(.horizontal, floatingBarHorizontalInset)
-                .padding(.top, floatingBarVerticalInset)
-
-            LinearGradient(
-                colors: [
-                    Color(uiColor: .systemBackground).opacity(0.42),
-                    Color(uiColor: .systemBackground).opacity(0.18),
-                    Color(uiColor: .systemBackground).opacity(0)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: floatingHeaderFadeHeight)
-            .allowsHitTesting(false)
-        }
+    /// Visual fade below the header chrome.
+    private var floatingGospelHeaderFade: some View {
+        LinearGradient(
+            colors: [
+                Color(uiColor: .systemBackground).opacity(0.42),
+                Color(uiColor: .systemBackground).opacity(0.18),
+                Color(uiColor: .systemBackground).opacity(0)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .frame(height: floatingHeaderFadeHeight)
+        .padding(.top, floatingBarVerticalInset)
+        .allowsHitTesting(false)
     }
 
     private var floatingPlaybackOverlay: some View {
@@ -254,16 +207,7 @@ struct ContentView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(VoiceOverNavigation.gospelButtonLabel(gospel))
-                .accessibilityInputLabels(VoiceControlLabels.gospel(gospel))
-                .accessibilityHint("두 번 탭하여 이 복음의 챕터 목록을 표시합니다")
-                .accessibilityValue(player.selectedGospel == gospel ? "선택됨" : "")
-                .accessibilityAddTraits(player.selectedGospel == gospel ? [.isButton, .isSelected] : .isButton)
                 .accessibilityIdentifier("gospel-\(gospel.accessibilitySuffix)")
-                .accessibilityFocused($voiceOverFocus, equals: .gospel(gospel))
-                .accessibilityRotorEntry(id: VoiceOverNavigation.Focus.gospel(gospel), in: controlsRotor)
-                .voiceOverControlsHorizontalBrowse(onBrowse: browseControlsForVoiceOver(forward:))
             }
         }
     }
@@ -274,32 +218,6 @@ struct ContentView: View {
         isSleepTimerPickerPresented = false
     }
 
-    private func restoreSleepTimerAccessibilityFocus() {
-        Task { @MainActor in
-            await Task.yield()
-            try? await Task.sleep(nanoseconds: 450_000_000)
-            voiceOverFocus = .sleepTimer
-        }
-    }
-
-    private func announceSleepTimerRemainingTimeOnce() {
-        let announcement = sleepTimerRemainingTimeAnnouncement
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            AccessibilitySupport.announce(announcement)
-        }
-    }
-
-    private var sleepTimerRemainingTimeAnnouncement: String {
-        if player.sleepTimerOption == .continuous {
-            return "남은시간, 무한대, 계속 재생"
-        }
-        if let endDate = player.sleepTimerEndDate {
-            return "남은시간, \(sleepTimerVoiceOverValue(until: endDate, now: Date()))"
-        }
-        return "남은시간, \(player.sleepTimerOption.accessibilityLabel)"
-    }
-
     private func sleepTimerActionTitle(for option: BiblePlayerViewModel.SleepTimerOption) -> String {
         if player.sleepTimerOption == option {
             return "\(option.title) ✓"
@@ -307,65 +225,31 @@ struct ContentView: View {
         return option.title
     }
 
-    private var gospelHeaderGlassBar: some View {
-        makeGospelHeaderGlassBar(
-            sleepTimerAccessibilityValue: sleepTimerVoiceOverValue,
-            updatesFrequently: false
-        )
-    }
-
-    private func makeGospelHeaderGlassBar(
-        sleepTimerAccessibilityValue: String,
-        updatesFrequently: Bool
-    ) -> some View {
+    private var sleepTimerRow: some View {
         GospelHeaderGlassBar(
             barHeight: controlBarHeight,
             gospelName: player.selectedGospel.koreanName,
-            chapterCount: player.selectedGospel.chapterCount,
             onSleepTimerTap: {
                 AccessibilitySupport.haptic(.selection)
                 player.recordBrowseInteractionWhilePlaying()
                 isSleepTimerPickerPresented = true
             },
-            sleepTimerAccessibilityValue: sleepTimerAccessibilityValue,
-            sleepTimerAccessibilityUpdatesFrequently: updatesFrequently,
-            sleepTimerFocus: $voiceOverFocus,
-            controlsRotor: controlsRotor
-        ) {
-            sleepTimerButtonLabel
-        }
-        .voiceOverControlsHorizontalBrowse(onBrowse: browseControlsForVoiceOver(forward:))
+            sleepTimerLabel: { sleepTimerButtonLabel }
+        )
+        .padding(.horizontal, floatingBarHorizontalInset)
     }
 
     @ViewBuilder
     private var sleepTimerButtonLabel: some View {
         if player.sleepTimerOption == .continuous {
             Text("남은시간: ∞")
-                .accessibilityHidden(true)
         } else if let endDate = player.sleepTimerEndDate {
             TimelineView(.periodic(from: .now, by: 1)) { timeline in
                 Text("남은시간: \(sleepTimerCountdownText(until: endDate, now: timeline.date))")
-                    .accessibilityHidden(true)
             }
         } else {
             Text("남은시간: \(player.sleepTimerOption.title)")
-                .accessibilityHidden(true)
         }
-    }
-
-    private var sleepTimerVoiceOverValue: String {
-        if player.sleepTimerOption == .continuous {
-            return "무한대, 계속 재생"
-        }
-        if let endDate = player.sleepTimerEndDate {
-            return sleepTimerVoiceOverValue(until: endDate, now: Date())
-        }
-        return player.sleepTimerOption.accessibilityLabel
-    }
-
-    private func sleepTimerVoiceOverValue(until endDate: Date, now: Date) -> String {
-        let remaining = max(0, endDate.timeIntervalSince(now))
-        return AccessibilitySupport.spokenDuration(remaining)
     }
 
     private func sleepTimerCountdownText(until endDate: Date, now: Date) -> String {
@@ -398,23 +282,13 @@ struct ContentView: View {
             .id(id)
     }
 
-    private func chapterListRow(
-        _ chapter: BibleChapter,
-        onBrowseForward: @escaping () -> Void,
-        onBrowseBackward: @escaping () -> Void
-    ) -> some View {
+    private func chapterListRow(_ chapter: BibleChapter) -> some View {
         ChapterListRowView(
             chapter: chapter,
             player: player,
             rowInsets: chapterListRowInsets,
             playingBackground: playingChapterRowBackground,
             iconColor: playingChapterIconColor,
-            voiceOverFocus: $voiceOverFocus,
-            chaptersRotor: chaptersRotor,
-            accessibilityValue: chapterRowAccessibilityValue(chapter),
-            playAccessibilityHint: chapterRowPlayAccessibilityHint(chapter),
-            onBrowseForward: onBrowseForward,
-            onBrowseBackward: onBrowseBackward,
             onPlay: { player.toggleChapterPlayback(chapter) }
         )
     }
@@ -430,12 +304,7 @@ struct ContentView: View {
                 rowMinHeight: chapterListRowMinHeight,
                 edgeSpacerRowCount: Self.chapterListEdgeSpacerRowCount,
                 spacerRow: chapterListSpacerRow(id:),
-                chapterRow: { chapter in
-                chapterListRow(chapter, onBrowseForward: { browseChapterForVoiceOver(forward: true) }, onBrowseBackward: { browseChapterForVoiceOver(forward: false) })
-            },
-                onBrowseForward: { browseChapterForVoiceOver(forward: true) },
-                onBrowseBackward: { browseChapterForVoiceOver(forward: false) },
-                onMoveToControlsLayer: focusControlsLayerForVoiceOver,
+                chapterRow: chapterListRow,
                 scrollAfterGospelSelection: scrollAfterGospelSelection(for:with:),
                 scrollToCurrentChapter: scrollToCurrentChapter(_:with:),
                 scrollToChapter: { scrollToChapter($0, with: proxy, anchor: .center) }
@@ -449,7 +318,6 @@ struct ContentView: View {
             chapterTitle: player.playbackTargetChapterTitle,
             isPlaying: player.isPlaying,
             transportEnabled: player.isPlaying,
-            playStopHint: playbackControlAccessibilityHint,
             onPlayStop: {
                 if player.isPlaying {
                     player.stop()
@@ -460,47 +328,8 @@ struct ContentView: View {
                 }
             },
             onPrevious: { player.skipToPreviousChapter() },
-            onNext: { player.skipToNextChapter() },
-            controlsFocus: $voiceOverFocus,
-            controlsRotor: controlsRotor
+            onNext: { player.skipToNextChapter() }
         )
-        .voiceOverControlsHorizontalBrowse(onBrowse: browseControlsForVoiceOver(forward:))
-    }
-
-    private var playbackControlAccessibilityHint: String {
-        if player.isPlaying {
-            return "두 번 탭하여 재생을 정지합니다"
-        }
-        if player.resumeBookmarkAvailable {
-            return "두 번 탭하여 정지했던 위치에서 이어 재생합니다"
-        }
-        if player.launchResumeOffer != nil {
-            return "두 번 탭하여 저장된 위치에서 이어 재생합니다"
-        }
-        return "두 번 탭하여 선택한 챕터부터 재생합니다"
-    }
-
-    private func chapterRowAccessibilityValue(_ chapter: BibleChapter) -> String {
-        if player.isPlaying, chapter == player.currentPlayingChapter {
-            return "재생 중"
-        }
-        if player.canResumeChapter(chapter) {
-            return "정지됨"
-        }
-        if chapter == player.selectedChapter {
-            return "선택됨"
-        }
-        return ""
-    }
-
-    private func chapterRowPlayAccessibilityHint(_ chapter: BibleChapter) -> String {
-        if player.isPlaying, chapter == player.currentPlayingChapter {
-            return "두 번 탭하여 재생을 정지합니다"
-        }
-        if player.canResumeChapter(chapter) {
-            return "두 번 탭하여 이어 재생합니다"
-        }
-        return "두 번 탭하여 이 챕터를 재생합니다"
     }
 
     @ViewBuilder
@@ -510,7 +339,6 @@ struct ContentView: View {
                 .font(.callout)
                 .foregroundStyle(.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityLabel("알림, \(message)")
         }
     }
 
@@ -530,20 +358,6 @@ struct ContentView: View {
         scrollToChapter(firstChapter, with: proxy, anchor: .center)
     }
 
-    private func focusStoppedResumeChapter(for gospel: Bible.Gospel) {
-        guard !player.isPlaying,
-              player.canResumeChapter(player.selectedChapter),
-              player.selectedChapter.gospel == gospel else {
-            return
-        }
-        let chapterID = player.selectedChapter.id
-        Task { @MainActor in
-            await Task.yield()
-            try? await Task.sleep(nanoseconds: 150_000_000)
-            voiceOverFocus = .chapter(id: chapterID)
-        }
-    }
-
     private func scrollToChapter(
         _ chapter: BibleChapter,
         with proxy: ScrollViewProxy,
@@ -559,31 +373,6 @@ struct ContentView: View {
         scrollToChapter(chapter, with: proxy, anchor: .center)
     }
 
-    private func browseControlsForVoiceOver(forward: Bool) {
-        voiceOverFocus = VoiceOverNavigation.browseControlsLayer(
-            current: voiceOverFocus,
-            forward: forward,
-            transportEnabled: player.isPlaying
-        )
-    }
-
-    private func browseChapterForVoiceOver(forward: Bool) {
-        player.browseToAdjacentChapterInList(forward: forward)
-        voiceOverFocus = .chapter(id: player.selectedChapter.id)
-    }
-
-    private func focusControlsLayerForVoiceOver() {
-        voiceOverFocus = VoiceOverNavigation.browseControlsLayer(
-            current: voiceOverFocus,
-            forward: false,
-            transportEnabled: player.isPlaying
-        )
-    }
-
-    private func focusChaptersLayerForVoiceOver() {
-        player.focusChapterInList(player.selectedChapter)
-        voiceOverFocus = .chapter(id: player.selectedChapter.id)
-    }
 }
 
 // MARK: - Chapter list (split out to ease Swift type-checking)
@@ -594,12 +383,6 @@ private struct ChapterListRowView: View {
     let rowInsets: EdgeInsets
     let playingBackground: Color
     let iconColor: Color
-    @AccessibilityFocusState.Binding var voiceOverFocus: VoiceOverNavigation.Focus?
-    let chaptersRotor: Namespace.ID
-    let accessibilityValue: String
-    let playAccessibilityHint: String
-    let onBrowseForward: () -> Void
-    let onBrowseBackward: () -> Void
     let onPlay: () -> Void
 
     private var isCurrentlyPlaying: Bool {
@@ -645,32 +428,13 @@ private struct ChapterListRowView: View {
         isActiveChapter ? playingBackground : .clear
     }
 
-    private var accessibilityTraits: AccessibilityTraits {
-        isActiveChapter ? [.isButton, .isSelected] : .isButton
-    }
-
     var body: some View {
-        rowButton
-            .modifier(
-                ChapterListRowAccessibilityModifier(
-                    chapter: chapter,
-                    accessibilityValue: accessibilityValue,
-                    playAccessibilityHint: playAccessibilityHint,
-                    traits: accessibilityTraits,
-                    voiceOverFocus: $voiceOverFocus,
-                    chaptersRotor: chaptersRotor,
-                    onBrowseForward: onBrowseForward,
-                    onBrowseBackward: onBrowseBackward
-                )
-            )
-    }
-
-    private var rowButton: some View {
         Button(action: onPlay, label: { rowLabel })
             .id(chapter.id)
             .buttonStyle(.plain)
             .listRowInsets(rowInsets)
             .listRowBackground(rowBackground)
+            .accessibilityIdentifier(chapter.id)
     }
 
     private var rowLabel: some View {
@@ -700,7 +464,6 @@ private struct ChapterListRowView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .fixedSize()
-                    .accessibilityHidden(true)
             }
 
             Spacer(minLength: 4)
@@ -713,83 +476,13 @@ private struct ChapterListRowView: View {
         if isCurrentlyPlaying {
             Image(systemName: "speaker.wave.2.fill")
                 .foregroundStyle(iconColor)
-                .accessibilityHidden(true)
         } else if canResume {
             Image(systemName: "stop.fill")
                 .foregroundStyle(iconColor)
-                .accessibilityHidden(true)
         } else if chapter == player.selectedChapter {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(.tint)
-                .accessibilityHidden(true)
         }
-    }
-}
-
-private struct ChapterListRowAccessibilityModifier: ViewModifier {
-    let chapter: BibleChapter
-    let accessibilityValue: String
-    let playAccessibilityHint: String
-    let traits: AccessibilityTraits
-    @AccessibilityFocusState.Binding var voiceOverFocus: VoiceOverNavigation.Focus?
-    let chaptersRotor: Namespace.ID
-    let onBrowseForward: () -> Void
-    let onBrowseBackward: () -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .modifier(ChapterListRowLabelsModifier(
-                chapter: chapter,
-                accessibilityValue: accessibilityValue,
-                playAccessibilityHint: playAccessibilityHint,
-                traits: traits
-            ))
-            .modifier(ChapterListRowFocusModifier(
-                chapterID: chapter.id,
-                voiceOverFocus: $voiceOverFocus,
-                chaptersRotor: chaptersRotor,
-                onBrowseForward: onBrowseForward,
-                onBrowseBackward: onBrowseBackward
-            ))
-    }
-}
-
-private struct ChapterListRowLabelsModifier: ViewModifier {
-    let chapter: BibleChapter
-    let accessibilityValue: String
-    let playAccessibilityHint: String
-    let traits: AccessibilityTraits
-
-    func body(content: Content) -> some View {
-        content
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(chapter.title)
-            .accessibilityInputLabels(VoiceControlLabels.chapter(chapter))
-            .accessibilityHint(playAccessibilityHint)
-            .accessibilityValue(accessibilityValue)
-            .accessibilityAddTraits(traits)
-    }
-}
-
-private struct ChapterListRowFocusModifier: ViewModifier {
-    let chapterID: String
-    @AccessibilityFocusState.Binding var voiceOverFocus: VoiceOverNavigation.Focus?
-    let chaptersRotor: Namespace.ID
-    let onBrowseForward: () -> Void
-    let onBrowseBackward: () -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .accessibilityIdentifier(chapterID)
-            .accessibilityFocused($voiceOverFocus, equals: .chapter(id: chapterID))
-            .accessibilityRotorEntry(id: VoiceOverNavigation.Focus.chapter(id: chapterID), in: chaptersRotor)
-            .accessibilityScrollAction { edge in
-                switch edge {
-                case .trailing: onBrowseForward()
-                case .leading: onBrowseBackward()
-                default: break
-                }
-            }
     }
 }
 
@@ -815,7 +508,6 @@ private struct ChapterListRowProgressView: View {
         }
         .frame(maxWidth: .infinity)
         .animation(.linear(duration: 0.2), value: elapsed)
-        .accessibilityHidden(true)
     }
 }
 
@@ -829,9 +521,6 @@ private struct ChapterListScrollView<SpacerRow: View, ChapterRow: View>: View {
     let edgeSpacerRowCount: Int
     let spacerRow: (String) -> SpacerRow
     let chapterRow: (BibleChapter) -> ChapterRow
-    let onBrowseForward: () -> Void
-    let onBrowseBackward: () -> Void
-    let onMoveToControlsLayer: () -> Void
     let scrollAfterGospelSelection: (Bible.Gospel, ScrollViewProxy) -> Void
     let scrollToCurrentChapter: (BibleChapter, ScrollViewProxy) -> Void
     let scrollToChapter: (BibleChapter) -> Void
@@ -842,10 +531,7 @@ private struct ChapterListScrollView<SpacerRow: View, ChapterRow: View>: View {
                 gospel: gospel,
                 topContentMargin: topContentMargin,
                 bottomContentMargin: bottomContentMargin,
-                rowMinHeight: rowMinHeight,
-                onBrowseForward: onBrowseForward,
-                onBrowseBackward: onBrowseBackward,
-                onMoveToControlsLayer: onMoveToControlsLayer
+                rowMinHeight: rowMinHeight
             ))
             .modifier(ChapterListScrollSyncModifier(
                 player: player,
@@ -878,9 +564,6 @@ private struct ChapterListStyleModifier: ViewModifier {
     let topContentMargin: CGFloat
     let bottomContentMargin: CGFloat
     let rowMinHeight: CGFloat
-    let onBrowseForward: () -> Void
-    let onBrowseBackward: () -> Void
-    let onMoveToControlsLayer: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -893,12 +576,6 @@ private struct ChapterListStyleModifier: ViewModifier {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .environment(\.defaultMinListRowHeight, rowMinHeight)
             .clipShape(RoundedRectangle(cornerRadius: 16))
-            .voiceOverChaptersLayerNavigation(
-                onBrowse: { forward in
-                    if forward { onBrowseForward() } else { onBrowseBackward() }
-                },
-                onMoveToControlsLayer: onMoveToControlsLayer
-            )
     }
 }
 

@@ -65,7 +65,6 @@ final class BiblePlayerViewModel: ObservableObject {
             guard oldValue != sleepTimerOption else { return }
             scheduleSleepTimerIfNeeded()
             AccessibilitySupport.haptic(.selection)
-            AccessibilitySupport.announce("수면 타이머, \(sleepTimerOption.accessibilityLabel)")
         }
     }
 
@@ -107,7 +106,7 @@ final class BiblePlayerViewModel: ObservableObject {
         refreshLaunchResumeOffer()
     }
 
-    /// Whether stopping left a chapter position that Play can resume (for accessibility hints).
+    /// Whether stopping left a chapter position that Play can resume.
     var resumeBookmarkAvailable: Bool {
         resumeBookmark != nil
     }
@@ -132,30 +131,6 @@ final class BiblePlayerViewModel: ObservableObject {
 
     func selectChapter(_ chapter: BibleChapter) {
         selectedChapter = chapter
-    }
-
-    /// VoiceOver: move list selection to next/previous chapter with wrap-around.
-    func focusChapterInList(_ chapter: BibleChapter) {
-        selectedChapter = chapter
-        requestScrollToCurrentChapter()
-    }
-
-    func browseToAdjacentChapterInList(forward: Bool) {
-        let chapters = selectedGospel.chapters
-        guard !chapters.isEmpty else { return }
-
-        let currentIndex = chapters.firstIndex(where: { $0.id == selectedChapter.id }) ?? 0
-        let newIndex: Int
-        if forward {
-            newIndex = (currentIndex + 1) % chapters.count
-        } else {
-            newIndex = (currentIndex - 1 + chapters.count) % chapters.count
-        }
-
-        let chapter = chapters[newIndex]
-        selectedChapter = chapter
-        requestScrollToCurrentChapter()
-        AccessibilitySupport.announce(chapter.title)
     }
 
     func refreshLaunchResumeOffer() {
@@ -217,9 +192,6 @@ final class BiblePlayerViewModel: ObservableObject {
         }
         selectedGospel = gospel
         AccessibilitySupport.haptic(.selection)
-        if !isPlaying {
-            AccessibilitySupport.announce("\(gospel.koreanName), 총 \(gospel.chapterCount)장")
-        }
         if stoppedResumeChapter(for: gospel) != nil {
             requestScrollToCurrentChapter()
         }
@@ -276,7 +248,6 @@ final class BiblePlayerViewModel: ObservableObject {
         guard rebuildChapterQueue() else {
             isPlaying = false
             playbackMessage = missingAudioPlaybackMessage(for: selectedGospel)
-            AccessibilitySupport.announce(playbackMessage ?? "재생할 수 없습니다.")
             return
         }
 
@@ -304,7 +275,6 @@ final class BiblePlayerViewModel: ObservableObject {
         guard rebuildChapterQueue() else {
             isPlaying = false
             playbackMessage = missingAudioPlaybackMessage(for: resumeChapter.gospel)
-            AccessibilitySupport.announce(playbackMessage ?? "재생할 수 없습니다.")
             return false
         }
 
@@ -374,11 +344,6 @@ final class BiblePlayerViewModel: ObservableObject {
 
         if let bookmark = resumeBookmark {
             persistPlayback(from: bookmark.chapter, elapsedSeconds: CMTimeGetSeconds(bookmark.time))
-            let chapter = bookmark.chapter
-            let position = AccessibilitySupport.spokenDuration(CMTimeGetSeconds(bookmark.time))
-            AccessibilitySupport.announce("\(chapter.title) 정지. \(position) 위치에서 이어 들을 수 있습니다")
-        } else {
-            AccessibilitySupport.announce("정지")
         }
 
         AccessibilitySupport.haptic(.stop)
@@ -774,9 +739,6 @@ final class BiblePlayerViewModel: ObservableObject {
         requestScrollToCurrentChapter()
         scheduleSleepTimerIfNeeded()
 
-        if let chapter = currentPlayingChapter {
-            AccessibilitySupport.announce("\(chapter.title) 재생 시작")
-        }
         AccessibilitySupport.haptic(.play)
         launchResumeOffer = nil
     }
@@ -832,9 +794,6 @@ final class BiblePlayerViewModel: ObservableObject {
             requestScrollToCurrentChapter()
             if advancedToNewChapter, isPlaying, currentItemID != nil {
                 AccessibilitySupport.haptic(.chapterChange)
-                if let chapter = currentPlayingChapter {
-                    AccessibilitySupport.announce(chapter.title)
-                }
             }
         }
 
