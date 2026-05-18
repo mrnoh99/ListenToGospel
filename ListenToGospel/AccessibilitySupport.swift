@@ -4,9 +4,24 @@
 //
 
 import Foundation
+import SwiftUI
 #if canImport(UIKit)
 import UIKit
 #endif
+
+/// Shared label typography for gospel grid, header title, sleep timer, and playback.
+enum AppControlTypography {
+    static let labelFont: Font = .body.weight(.semibold)
+}
+
+/// Shared dimensions for 2×2 gospel cells and floating glass control bars.
+enum AppControlLayout {
+    static let barHeight: CGFloat = 48
+    static let barCornerRadius: CGFloat = 14
+    static let floatingBarHorizontalInset: CGFloat = 4
+    static let floatingBarVerticalInset: CGFloat = 6
+    static let barHorizontalPadding: CGFloat = 16
+}
 
 enum AccessibilitySupport {
     enum Haptic {
@@ -58,15 +73,17 @@ enum AccessibilitySupport {
 
 enum VoiceControlLabels {
     static func gospel(_ gospel: Bible.Gospel) -> [String] {
-        [gospel.shortName, "\(gospel.shortName) 탭", gospel.koreanName]
+        [gospel.koreanName, gospel.shortName, "\(gospel.koreanName) 버튼", "\(gospel.shortName) 탭"]
     }
 
     static var playbackPlay: [String] { ["재생", "재생 탭"] }
     static var playbackStop: [String] { ["정지", "정지 탭"] }
-    static var sleepTimer: [String] { ["시간 선택", "시간 선택 탭", "수면 타이머"] }
+    static var sleepTimer: [String] {
+        ["타이머", "타이머 버튼", "타이머버튼", "남은시간", "수면 타이머"]
+    }
 
     static func chapter(_ chapter: BibleChapter) -> [String] {
-        [chapter.title, "\(chapter.title) 탭", "\(chapter.gospel.shortName) \(chapter.number)장"]
+        [chapter.title, "\(chapter.title) 탭", chapter.shortTitle]
     }
 }
 

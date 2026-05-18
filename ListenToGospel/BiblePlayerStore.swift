@@ -60,19 +60,3 @@ final class BiblePlayerStore {
         }
     }
 }
-
-extension Bible.Gospel {
-    static func matching(shortName: String) -> Bible.Gospel? {
-        let normalized = shortName
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "복음", with: "")
-            .replacingOccurrences(of: "서", with: "")
-
-        for gospel in Bible.Gospel.allCases {
-            if gospel.shortName == normalized || gospel.koreanName.contains(normalized) {
-                return gospel
-            }
-        }
-        return nil
-    }
-}

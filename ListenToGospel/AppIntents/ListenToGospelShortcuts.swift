@@ -8,11 +8,11 @@ import AppIntents
 // MARK: - Intents
 
 struct PlayBibleChapterIntent: AppIntent {
-    static var title: LocalizedStringResource = "복음 장 재생"
-    static var description = IntentDescription("선택한 복음과 장을 재생합니다.")
+    static var title: LocalizedStringResource = "복음 챕터 재생"
+    static var description = IntentDescription("선택한 복음과 챕터를 재생합니다.")
     static var openAppWhenRun = true
 
-    @Parameter(title: "복음 장")
+    @Parameter(title: "복음 챕터")
     var chapter: BibleChapterEntity
 
     static var parameterSummary: some ParameterSummary {
@@ -27,7 +27,7 @@ struct PlayBibleChapterIntent: AppIntent {
 
 struct ResumePlaybackIntent: AppIntent {
     static var title: LocalizedStringResource = "이어서 재생"
-    static var description = IntentDescription("정지했던 위치에서 이어 듣거나 선택한 장을 재생합니다.")
+    static var description = IntentDescription("정지했던 위치에서 이어 듣거나 선택한 챕터를 재생합니다.")
     static var openAppWhenRun = true
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -110,7 +110,7 @@ struct ListenToGospelShortcuts: AppShortcutsProvider {
                 "\(\.$chapter) in \(.applicationName)",
                 "\(\.$chapter) 재생 in \(.applicationName)"
             ],
-            shortTitle: "복음 장 재생",
+            shortTitle: "복음 챕터 재생",
             systemImageName: "play.fill"
         )
 

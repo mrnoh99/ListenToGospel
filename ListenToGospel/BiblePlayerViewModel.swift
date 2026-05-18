@@ -51,6 +51,8 @@ final class BiblePlayerViewModel: ObservableObject {
             // Keep `resumeBookmark` when browsing other gospels while stopped so Play resumes the stopped track.
             if let playing = currentPlayingChapter, playing.gospel == selectedGospel {
                 selectedChapter = playing
+            } else if let stoppedChapter = stoppedResumeChapter(for: selectedGospel) {
+                selectedChapter = stoppedChapter
             } else {
                 selectedChapter = selectedGospel.chapters[0]
             }
@@ -62,6 +64,7 @@ final class BiblePlayerViewModel: ObservableObject {
         didSet {
             guard oldValue != sleepTimerOption else { return }
             scheduleSleepTimerIfNeeded()
+            AccessibilitySupport.haptic(.selection)
             AccessibilitySupport.announce("수면 타이머, \(sleepTimerOption.accessibilityLabel)")
         }
     }
@@ -109,8 +112,50 @@ final class BiblePlayerViewModel: ObservableObject {
         resumeBookmark != nil
     }
 
+    /// Chapter shown on the play/stop control: now playing, resume target, launch offer, or next from selection.
+    var playbackTargetChapter: BibleChapter {
+        if let currentPlayingChapter {
+            return currentPlayingChapter
+        }
+        if let resumeBookmark {
+            return resumeBookmark.chapter
+        }
+        if let launchResumeOffer {
+            return launchResumeOffer.chapter
+        }
+        return selectedChapter
+    }
+
+    var playbackTargetChapterTitle: String {
+        playbackTargetChapter.title
+    }
+
     func selectChapter(_ chapter: BibleChapter) {
         selectedChapter = chapter
+    }
+
+    /// VoiceOver: move list selection to next/previous chapter with wrap-around.
+    func focusChapterInList(_ chapter: BibleChapter) {
+        selectedChapter = chapter
+        requestScrollToCurrentChapter()
+    }
+
+    func browseToAdjacentChapterInList(forward: Bool) {
+        let chapters = selectedGospel.chapters
+        guard !chapters.isEmpty else { return }
+
+        let currentIndex = chapters.firstIndex(where: { $0.id == selectedChapter.id }) ?? 0
+        let newIndex: Int
+        if forward {
+            newIndex = (currentIndex + 1) % chapters.count
+        } else {
+            newIndex = (currentIndex - 1 + chapters.count) % chapters.count
+        }
+
+        let chapter = chapters[newIndex]
+        selectedChapter = chapter
+        requestScrollToCurrentChapter()
+        AccessibilitySupport.announce(chapter.title)
     }
 
     func refreshLaunchResumeOffer() {
@@ -125,6 +170,10 @@ final class BiblePlayerViewModel: ObservableObject {
             return
         }
         launchResumeOffer = LaunchResumeOffer(chapter: chapter, elapsedSeconds: saved.elapsedSeconds)
+        if selectedGospel != chapter.gospel {
+            selectedGospel = chapter.gospel
+        }
+        selectedChapter = chapter
     }
 
     func dismissLaunchResumeOffer() {
@@ -154,6 +203,9 @@ final class BiblePlayerViewModel: ObservableObject {
             if let playing = currentPlayingChapter, playing.gospel == gospel {
                 selectedChapter = playing
                 requestScrollToCurrentChapter()
+            } else if let stoppedChapter = stoppedResumeChapter(for: gospel) {
+                selectedChapter = stoppedChapter
+                requestScrollToCurrentChapter()
             }
             considerSchedulingNavigationSnapBackAfterBrowsing()
             return
@@ -163,7 +215,20 @@ final class BiblePlayerViewModel: ObservableObject {
         if !isPlaying {
             AccessibilitySupport.announce("\(gospel.koreanName), 총 \(gospel.chapterCount)장")
         }
+        if stoppedResumeChapter(for: gospel) != nil {
+            requestScrollToCurrentChapter()
+        }
         considerSchedulingNavigationSnapBackAfterBrowsing()
+    }
+
+    /// Chapter left stopped with a resume position for the given gospel, if any.
+    func stoppedResumeChapter(for gospel: Bible.Gospel) -> BibleChapter? {
+        guard !isPlaying,
+              let bookmark = resumeBookmark,
+              bookmark.chapter.gospel == gospel else {
+            return nil
+        }
+        return bookmark.chapter
     }
 
     func play(_ chapter: BibleChapter) {
@@ -172,6 +237,27 @@ final class BiblePlayerViewModel: ObservableObject {
         launchResumeOffer = nil
         selectedChapter = chapter
         playFromSelection()
+    }
+
+    /// Tap the playing chapter row to stop; tap again to resume from the stopped position.
+    func toggleChapterPlayback(_ chapter: BibleChapter) {
+        if isPlaying, currentPlayingChapter == chapter {
+            stop()
+            return
+        }
+
+        if !isPlaying, resumeBookmark?.chapter == chapter {
+            selectedChapter = chapter
+            if resumePlaybackAfterStop() {
+                return
+            }
+        }
+
+        play(chapter)
+    }
+
+    func canResumeChapter(_ chapter: BibleChapter) -> Bool {
+        !isPlaying && resumeBookmark?.chapter == chapter
     }
 
     func playFromSelection() {
@@ -250,9 +336,19 @@ final class BiblePlayerViewModel: ObservableObject {
 
     func stop() {
         cancelNavigationSnapBack()
+        var pausedElapsed: TimeInterval = 0
+        var pausedDuration: TimeInterval = 0
         if let item = player.currentItem,
            let chapter = itemChapters[ObjectIdentifier(item)] {
-            resumeBookmark = PlaybackResumeBookmark(chapter: chapter, time: player.currentTime())
+            let time = player.currentTime()
+            resumeBookmark = PlaybackResumeBookmark(chapter: chapter, time: time)
+            if time.seconds.isFinite {
+                pausedElapsed = max(0, time.seconds)
+            }
+            let duration = item.duration.seconds
+            if duration.isFinite, duration > 0 {
+                pausedDuration = duration
+            }
         }
 
         player.pause()
@@ -262,8 +358,13 @@ final class BiblePlayerViewModel: ObservableObject {
         playbackMessage = nil
         currentPlayingChapter = nil
         isPlaying = false
-        playbackElapsedSeconds = 0
-        playbackDurationSeconds = 0
+        if resumeBookmark != nil {
+            playbackElapsedSeconds = pausedElapsed
+            playbackDurationSeconds = pausedDuration
+        } else {
+            playbackElapsedSeconds = 0
+            playbackDurationSeconds = 0
+        }
         clearNowPlayingInfo()
 
         if let bookmark = resumeBookmark {
@@ -574,8 +675,10 @@ final class BiblePlayerViewModel: ObservableObject {
         guard let currentItem = player.currentItem else {
             currentPlayingChapter = nil
             isPlaying = false
-            playbackElapsedSeconds = 0
-            playbackDurationSeconds = 0
+            if resumeBookmark == nil {
+                playbackElapsedSeconds = 0
+                playbackDurationSeconds = 0
+            }
             return
         }
 
@@ -586,6 +689,9 @@ final class BiblePlayerViewModel: ObservableObject {
 
     private func refreshPlaybackProgressForUI() {
         guard isPlaying, player.currentItem != nil else {
+            if resumeBookmark != nil {
+                return
+            }
             playbackElapsedSeconds = 0
             playbackDurationSeconds = 0
             return

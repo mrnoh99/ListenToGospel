@@ -8,7 +8,7 @@
 import Foundation
 
 struct Bible {
-    enum Gospel: Int, CaseIterable, Identifiable, Hashable {
+    enum Gospel: Int, CaseIterable, Identifiable, Hashable, Sendable {
         case matthew
         case mark
         case luke
@@ -16,7 +16,7 @@ struct Bible {
 
         var id: Int { rawValue }
 
-        var koreanName: String {
+        nonisolated var koreanName: String {
             switch self {
             case .matthew: return "마태오복음서"
             case .mark: return "마르코복음서"
@@ -25,7 +25,7 @@ struct Bible {
             }
         }
 
-        var shortName: String {
+        nonisolated var shortName: String {
             switch self {
             case .matthew: return "마태오"
             case .mark: return "마르코"
@@ -53,8 +53,12 @@ struct Bible {
             }
         }
 
-        var chapterCount: Int {
-            switch self {
+        nonisolated var chapterCount: Int {
+            Self.chapterCount(for: self)
+        }
+
+        nonisolated static func chapterCount(for gospel: Gospel) -> Int {
+            switch gospel {
             case .matthew: return 28
             case .mark: return 16
             case .luke: return 24
@@ -62,7 +66,7 @@ struct Bible {
             }
         }
 
-        var audioFolderName: String {
+        nonisolated var audioFolderName: String {
             switch self {
             case .matthew: return "01.마태오복음"
             case .mark: return "02.마르코복음"
@@ -71,7 +75,7 @@ struct Bible {
             }
         }
 
-        var audioFilePrefix: String {
+        nonisolated var audioFilePrefix: String {
             switch self {
             case .matthew: return "마태오복음"
             case .mark: return "마르코복음"
@@ -81,7 +85,7 @@ struct Bible {
         }
 
         var chapters: [BibleChapter] {
-            (1...chapterCount).map {
+            (1...Self.chapterCount(for: self)).map {
                 BibleChapter(gospel: self, number: $0)
             }
         }
@@ -101,16 +105,36 @@ struct Bible {
             guard count > 0 else { return 0 }
             return ((index % count) + count) % count
         }
+
+        nonisolated static func matching(shortName: String) -> Bible.Gospel? {
+            let normalized = shortName
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "복음", with: "")
+                .replacingOccurrences(of: "서", with: "")
+
+            for gospel in Bible.Gospel.allCases {
+                if gospel.shortName == normalized || gospel.koreanName.contains(normalized) {
+                    return gospel
+                }
+            }
+            return nil
+        }
     }
 }
 
-struct BibleChapter: Identifiable, Hashable {
+struct BibleChapter: Identifiable, Hashable, Sendable {
     let gospel: Bible.Gospel
     let number: Int
 
     var id: String { resourceName }
-    var title: String { "\(gospel.koreanName) \(number)장" }
-    var resourceName: String { "\(gospel.audioFilePrefix) \(String(format: "%02d", number))장" }
-    var resourceSubdirectory: String { "AudioFiles/\(gospel.audioFolderName)" }
-    var resourceDisplayPath: String { "\(resourceSubdirectory)/\(resourceName).m4a" }
+
+    nonisolated var title: String { "\(gospel.koreanName) \(number)장" }
+
+    nonisolated var shortTitle: String { "\(gospel.shortName) \(number)장" }
+
+    nonisolated var resourceName: String { "\(gospel.audioFilePrefix) \(String(format: "%02d", number))장" }
+
+    nonisolated var resourceSubdirectory: String { "AudioFiles/\(gospel.audioFolderName)" }
+
+    nonisolated var resourceDisplayPath: String { "\(resourceSubdirectory)/\(resourceName).m4a" }
 }
