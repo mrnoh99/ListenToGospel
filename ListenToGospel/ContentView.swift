@@ -112,16 +112,23 @@ struct ContentView: View {
     }
 
     /// Title + gospel grid + sleep timer; measured height is the chapter list top inset.
+    /// The title/grid section keeps an opaque background so scrolling rows stay hidden behind it,
+    /// while the sleep timer row is left transparent so chapter rows scroll under the glass capsule.
     private var controlsHeaderChrome: some View {
-        VStack(spacing: headerSectionSpacing) {
-            appTitleView
-            gospelPicker
+        VStack(spacing: 0) {
+            VStack(spacing: headerSectionSpacing) {
+                appTitleView
+                gospelPicker
+            }
+            .padding(.top, topContentInset)
+            .padding(.bottom, headerSectionSpacing)
+            .frame(maxWidth: .infinity)
+            .background(Color(uiColor: .systemBackground))
+
             sleepTimerRow
+                .padding(.bottom, headerBottomPadding)
         }
-        .padding(.top, topContentInset)
-        .padding(.bottom, headerBottomPadding)
         .frame(maxWidth: .infinity)
-        .background(Color(uiColor: .systemBackground))
         .background {
             GeometryReader { geometry in
                 Color.clear.preference(
