@@ -210,6 +210,11 @@ final class BiblePlayerViewModel: ObservableObject {
             considerSchedulingNavigationSnapBackAfterBrowsing()
             return
         }
+        if isPlaying,
+           let playing = currentPlayingChapter,
+           playing.gospel != gospel {
+            pause()
+        }
         selectedGospel = gospel
         AccessibilitySupport.haptic(.selection)
         if !isPlaying {
@@ -270,7 +275,7 @@ final class BiblePlayerViewModel: ObservableObject {
 
         guard rebuildChapterQueue() else {
             isPlaying = false
-            playbackMessage = "앱 번들에서 오디오 파일을 찾지 못했습니다."
+            playbackMessage = missingAudioPlaybackMessage(for: selectedGospel)
             AccessibilitySupport.announce(playbackMessage ?? "재생할 수 없습니다.")
             return
         }
@@ -298,7 +303,7 @@ final class BiblePlayerViewModel: ObservableObject {
 
         guard rebuildChapterQueue() else {
             isPlaying = false
-            playbackMessage = "앱 번들에서 오디오 파일을 찾지 못했습니다."
+            playbackMessage = missingAudioPlaybackMessage(for: resumeChapter.gospel)
             AccessibilitySupport.announce(playbackMessage ?? "재생할 수 없습니다.")
             return false
         }
@@ -522,26 +527,168 @@ final class BiblePlayerViewModel: ObservableObject {
     }
     #endif
 
-    private func audioURL(for chapter: BibleChapter) -> URL? {
-        let subdirectories: [String?] = [
-            chapter.resourceSubdirectory,
-            "AudioFiles",
-            nil
-        ]
+    private func resourceNameVariants(_ name: String) -> [String] {
+        let nfc = name.precomposedStringWithCanonicalMapping
+        let nfd = name.decomposedStringWithCanonicalMapping
+        var variants: [String] = []
+        for candidate in [name, nfc, nfd] where !variants.contains(candidate) {
+            variants.append(candidate)
+        }
+        return variants
+    }
 
-        for subdirectory in subdirectories {
+    private func audioURL(for chapter: BibleChapter) -> URL? {
+        let resourceNames = resourceNameVariants(chapter.resourceName)
+
+        for subdirectory in audioSubdirectoryPaths(for: chapter) {
+            for resourceName in resourceNames {
+                for fileExtension in supportedAudioExtensions {
+                    if let url = Bundle.main.url(
+                        forResource: resourceName,
+                        withExtension: fileExtension,
+                        subdirectory: subdirectory
+                    ) {
+                        return url
+                    }
+                }
+            }
+        }
+
+        for resourceName in resourceNames {
             for fileExtension in supportedAudioExtensions {
                 if let url = Bundle.main.url(
-                    forResource: chapter.resourceName,
-                    withExtension: fileExtension,
-                    subdirectory: subdirectory
+                    forResource: resourceName,
+                    withExtension: fileExtension
                 ) {
                     return url
                 }
             }
         }
 
+        if let url = audioURLFromDirectoryListing(for: chapter) {
+            return url
+        }
+
+        return audioURLByWalkingBundle(for: chapter)
+    }
+
+    private func audioSubdirectoryPaths(for chapter: BibleChapter) -> [String] {
+        let folderVariants = resourceNameVariants(chapter.gospel.audioFolderName)
+        var paths: [String] = [
+            chapter.resourceSubdirectory,
+            "ListenToGospel/\(chapter.resourceSubdirectory)"
+        ]
+
+        for folder in folderVariants {
+            paths.append("AudioFiles/\(folder)")
+            paths.append("ListenToGospel/AudioFiles/\(folder)")
+        }
+
+        var unique: [String] = []
+        for path in paths where !unique.contains(path) {
+            unique.append(path)
+        }
+        return unique
+    }
+
+    private func audioURLFromDirectoryListing(for chapter: BibleChapter) -> URL? {
+        guard let resourceBase = Bundle.main.resourceURL else { return nil }
+        let target = chapter.resourceName.precomposedStringWithCanonicalMapping
+
+        for directoryURL in audioDirectoryURLs(for: chapter, resourceBase: resourceBase) {
+            guard let fileURLs = try? FileManager.default.contentsOfDirectory(
+                at: directoryURL,
+                includingPropertiesForKeys: nil
+            ) else {
+                continue
+            }
+
+            for fileURL in fileURLs {
+                guard supportedAudioExtensions.contains(fileURL.pathExtension.lowercased()) else { continue }
+                let stem = fileURL.deletingPathExtension().lastPathComponent
+                if stem.precomposedStringWithCanonicalMapping == target {
+                    return fileURL
+                }
+            }
+        }
         return nil
+    }
+
+    private func audioDirectoryURLs(for chapter: BibleChapter, resourceBase: URL) -> [URL] {
+        var directories: [URL] = []
+
+        for subdirectory in audioSubdirectoryPaths(for: chapter) {
+            directories.append(resourceBase.appendingPathComponent(subdirectory, isDirectory: true))
+        }
+
+        let folderTarget = chapter.gospel.audioFolderName.precomposedStringWithCanonicalMapping
+        for audioRootName in ["AudioFiles", "ListenToGospel/AudioFiles"] {
+            let audioRoot = resourceBase.appendingPathComponent(audioRootName, isDirectory: true)
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: audioRoot,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                continue
+            }
+
+            for entry in entries {
+                guard (try? entry.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { continue }
+                if entry.lastPathComponent.precomposedStringWithCanonicalMapping == folderTarget {
+                    directories.append(entry)
+                }
+            }
+        }
+
+        var unique: [URL] = []
+        for url in directories where !unique.contains(url) {
+            unique.append(url)
+        }
+        return unique
+    }
+
+    private func audioURLByWalkingBundle(for chapter: BibleChapter) -> URL? {
+        guard let resourceBase = Bundle.main.resourceURL else { return nil }
+        let target = chapter.resourceName.precomposedStringWithCanonicalMapping
+        let folderTarget = chapter.gospel.audioFolderName.precomposedStringWithCanonicalMapping
+
+        guard let enumerator = FileManager.default.enumerator(
+            at: resourceBase,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+
+        for case let fileURL as URL in enumerator {
+            guard supportedAudioExtensions.contains(fileURL.pathExtension.lowercased()) else { continue }
+            let stem = fileURL.deletingPathExtension().lastPathComponent
+            guard stem.precomposedStringWithCanonicalMapping == target else { continue }
+
+            let path = fileURL.path.precomposedStringWithCanonicalMapping
+            if path.contains(folderTarget) {
+                return fileURL
+            }
+        }
+        return nil
+    }
+
+    private func alignSelectedChapterWithGospel() {
+        guard selectedChapter.gospel != selectedGospel else { return }
+        let index = min(max(selectedChapter.number - 1, 0), selectedGospel.chapterCount - 1)
+        selectedChapter = selectedGospel.chapters[index]
+    }
+
+    private func missingAudioPlaybackMessage(for gospel: Bible.Gospel) -> String {
+        if missingResourceNames.isEmpty {
+            return "앱 번들에서 \(gospel.koreanName) 오디오 파일을 찾지 못했습니다. Xcode에서 Clean Build 후 다시 설치해 주세요."
+        }
+
+        let missingCount = missingResourceNames.count
+        if missingCount == 1, let path = missingResourceNames.first {
+            return "앱 번들에서 오디오 파일을 찾지 못했습니다. (\(path))"
+        }
+        return "앱 번들에서 \(gospel.koreanName) 오디오 \(missingCount)개를 찾지 못했습니다."
     }
 
     private func resetQueueState() {
@@ -552,6 +699,8 @@ final class BiblePlayerViewModel: ObservableObject {
     }
 
     private func rebuildChapterQueue() -> Bool {
+        alignSelectedChapterWithGospel()
+        let requestedChapter = selectedChapter
         let order = selectedGospel.playbackOrder(startingAt: selectedChapter)
 
         resetQueueState()
@@ -569,7 +718,19 @@ final class BiblePlayerViewModel: ObservableObject {
             player.insert(item, after: nil)
         }
 
-        return !player.items().isEmpty
+        guard let firstItem = player.items().first,
+              let firstChapter = itemChapters[ObjectIdentifier(firstItem)] else {
+            return false
+        }
+
+        if selectedChapter.id != firstChapter.id {
+            selectedChapter = firstChapter
+            if requestedChapter.id != firstChapter.id {
+                playbackMessage = "\(requestedChapter.title) 오디오를 찾지 못해 \(firstChapter.title)부터 재생합니다."
+            }
+        }
+
+        return true
     }
 
     private func startPlayback(seekTo seekTime: CMTime?) {
@@ -683,8 +844,16 @@ final class BiblePlayerViewModel: ObservableObject {
         }
 
         currentPlayingChapter = itemChapters[ObjectIdentifier(currentItem)]
+        syncSelectedChapterWithPlayback()
         updateNowPlayingInfo()
         refreshPlaybackProgressForUI()
+    }
+
+    private func syncSelectedChapterWithPlayback() {
+        guard let playing = currentPlayingChapter else { return }
+        guard playing.gospel == selectedGospel else { return }
+        guard selectedChapter.id != playing.id else { return }
+        selectedChapter = playing
     }
 
     private func refreshPlaybackProgressForUI() {
