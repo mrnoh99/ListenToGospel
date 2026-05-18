@@ -110,7 +110,7 @@ struct ContentView: View {
             .font(.largeTitle.bold())
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityAddTraits(.isHeader)
-            .accessibilitySortPriority(40)
+            .accessibilitySortPriority(50)
     }
 
     /// Title + gospel grid + sleep timer; measured height is the chapter list top inset.
@@ -220,7 +220,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("gospel-\(gospel.accessibilitySuffix)")
-                .accessibilitySortPriority(30)
+                .accessibilitySortPriority(40)
             }
         }
     }
@@ -250,19 +250,23 @@ struct ContentView: View {
             sleepTimerLabel: { sleepTimerButtonLabel }
         )
         .padding(.horizontal, floatingBarHorizontalInset)
-        .accessibilitySortPriority(20)
+        .accessibilitySortPriority(30)
     }
 
     @ViewBuilder
     private var sleepTimerButtonLabel: some View {
         if player.sleepTimerOption == .continuous {
             Text("남은시간: ∞")
+                .accessibilityLabel("연속 재생")
         } else if let endDate = player.sleepTimerEndDate {
             TimelineView(.periodic(from: .now, by: 1)) { timeline in
-                Text("남은시간: \(sleepTimerCountdownText(until: endDate, now: timeline.date))")
+                let countdown = sleepTimerCountdownText(until: endDate, now: timeline.date)
+                Text("남은시간: \(countdown)")
+                    .accessibilityLabel("남은시간 \(countdown)")
             }
         } else {
             Text("남은시간: \(player.sleepTimerOption.title)")
+                .accessibilityLabel("타이머 설정 \(player.sleepTimerOption.title)")
         }
     }
 
@@ -341,7 +345,7 @@ struct ContentView: View {
                 }
             }
         )
-        .accessibilitySortPriority(10)
+        .accessibilitySortPriority(20)
     }
 
     @ViewBuilder
@@ -440,6 +444,19 @@ private struct ChapterListRowView: View {
         isActiveChapter ? playingBackground : .clear
     }
 
+    private var accessibilityProgressText: String? {
+        guard let progress = chapterProgress else { return nil }
+        if isCurrentlyPlaying {
+            return "재생중"
+        } else if canResume {
+            let elapsed = formatPlaybackTime(progress.elapsed)
+            let total = formatPlaybackTime(progress.total)
+            let percentage = Int((progress.elapsed / progress.total * 100).rounded())
+            return "\(elapsed) / \(total), \(percentage)% 재생됨"
+        }
+        return nil
+    }
+
     var body: some View {
         Button(action: onPlay, label: { rowLabel })
             .id(chapter.id)
@@ -447,6 +464,8 @@ private struct ChapterListRowView: View {
             .listRowInsets(rowInsets)
             .listRowBackground(rowBackground)
             .accessibilityIdentifier(chapter.id)
+            .accessibilitySortPriority(10)
+            .modifier(AccessibilityProgressModifier(progressText: accessibilityProgressText))
     }
 
     private var rowLabel: some View {
@@ -476,6 +495,7 @@ private struct ChapterListRowView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .fixedSize()
+                    .accessibilityHidden(true)
             }
 
             Spacer(minLength: 4)
@@ -520,6 +540,7 @@ private struct ChapterListRowProgressView: View {
         }
         .frame(maxWidth: .infinity)
         .animation(.linear(duration: 0.2), value: elapsed)
+        .accessibilityHidden(true)
     }
 }
 
@@ -624,6 +645,18 @@ private struct ChapterListScrollSyncModifier: ViewModifier {
 
 // MARK: - Main chrome (split out to ease Swift type-checking)
 
+private struct AccessibilityProgressModifier: ViewModifier {
+    let progressText: String?
+    
+    func body(content: Content) -> some View {
+        if let progressText = progressText {
+            content.accessibilityValue(progressText)
+        } else {
+            content
+        }
+    }
+}
+
 private struct MainChromeModifier: ViewModifier {
     let scenePhase: ScenePhase
     @Binding var isSleepTimerPickerPresented: Bool
@@ -649,11 +682,17 @@ private struct MainChromeModifier: ViewModifier {
                     Button(sleepTimerActionTitle(option)) {
                         selectSleepTimer(option)
                     }
+                    .accessibilityLabel(option.title)
+                    .accessibilityHint("수면 타이머를 \(option.title)로 설정")
                 }
                 Button(sleepTimerActionTitle(.continuous)) {
                     selectSleepTimer(.continuous)
                 }
+                .accessibilityLabel("연속 재생")
+                .accessibilityHint("수면 타이머를 비활성화하고 연속 재생")
                 Button("취소", role: .cancel) {}
+                    .accessibilityLabel("취소")
+                    .accessibilityHint("타이머 설정을 취소")
             } message: {
                 Text("타이머 시간을 정합니다")
             }

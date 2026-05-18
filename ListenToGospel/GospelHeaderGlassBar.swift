@@ -49,8 +49,8 @@ struct GospelHeaderGlassBar<SleepTimerLabel: View>: View {
             }
             .buttonStyle(.plain)
             .fixedSize(horizontal: true, vertical: false)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("타이머")
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("수면 타이머")
             .accessibilityAddTraits(.isButton)
             .accessibilityIdentifier("sleep-timer-button")
         }
