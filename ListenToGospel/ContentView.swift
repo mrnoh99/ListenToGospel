@@ -109,6 +109,8 @@ struct ContentView: View {
         Text("복음서듣기")
             .font(.largeTitle.bold())
             .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilitySortPriority(40)
     }
 
     /// Title + gospel grid + sleep timer; measured height is the chapter list top inset.
@@ -160,6 +162,7 @@ struct ContentView: View {
             floatingPlaybackOverlay
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .accessibilityElement(children: .contain)
     }
 
     /// Visual fade below the header chrome.
@@ -217,6 +220,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("gospel-\(gospel.accessibilitySuffix)")
+                .accessibilitySortPriority(30)
             }
         }
     }
@@ -246,6 +250,7 @@ struct ContentView: View {
             sleepTimerLabel: { sleepTimerButtonLabel }
         )
         .padding(.horizontal, floatingBarHorizontalInset)
+        .accessibilitySortPriority(20)
     }
 
     @ViewBuilder
@@ -336,6 +341,7 @@ struct ContentView: View {
                 }
             }
         )
+        .accessibilitySortPriority(10)
     }
 
     @ViewBuilder
