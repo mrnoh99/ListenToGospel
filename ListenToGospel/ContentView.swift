@@ -317,7 +317,6 @@ struct ContentView: View {
             barHeight: controlBarHeight,
             chapterTitle: player.playbackTargetChapterTitle,
             isPlaying: player.isPlaying,
-            transportEnabled: player.isPlaying,
             onPlayStop: {
                 if player.isPlaying {
                     player.stop()
@@ -326,9 +325,7 @@ struct ContentView: View {
                 } else {
                     player.playFromSelection()
                 }
-            },
-            onPrevious: { player.skipToPreviousChapter() },
-            onNext: { player.skipToNextChapter() }
+            }
         )
     }
 

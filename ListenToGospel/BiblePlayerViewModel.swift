@@ -345,50 +345,6 @@ final class BiblePlayerViewModel: ObservableObject {
         refreshLaunchResumeOffer()
     }
 
-    func skipToNextChapter() {
-        guard isPlaying, let currentItem = player.currentItem else { return }
-
-        let items = player.items()
-        guard let index = items.firstIndex(where: { $0 === currentItem }) else { return }
-
-        if index + 1 < items.count {
-            player.advanceToNextItem()
-            AccessibilitySupport.haptic(.chapterChange)
-            handlePotentialQueueItemTransition()
-            return
-        }
-
-        guard let firstChapter = currentPlayingChapter?.gospel.chapters.first else { return }
-        play(firstChapter)
-        AccessibilitySupport.haptic(.chapterChange)
-    }
-
-    func skipToPreviousChapter() {
-        guard isPlaying, let chapter = currentPlayingChapter else { return }
-
-        let elapsed = player.currentTime().seconds
-        if elapsed.isFinite, elapsed > 3 {
-            player.seek(to: .zero) { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    self?.updateNowPlayingInfo()
-                    self?.refreshPlaybackProgressForUI()
-                }
-            }
-            return
-        }
-
-        if chapter.number > 1 {
-            let previous = chapter.gospel.chapters[chapter.number - 2]
-            play(previous)
-            AccessibilitySupport.haptic(.chapterChange)
-            return
-        }
-
-        guard let lastChapter = chapter.gospel.chapters.last else { return }
-        play(lastChapter)
-        AccessibilitySupport.haptic(.chapterChange)
-    }
-
     /// Called when the app moves between foreground, inactive, or background while playback should continue (e.g. screen lock).
     func reassertAudioPlaybackIfNeeded() {
         guard isPlaying else { return }
@@ -925,21 +881,8 @@ final class BiblePlayerViewModel: ObservableObject {
             return .success
         }
 
-        commandCenter.nextTrackCommand.isEnabled = true
-        commandCenter.nextTrackCommand.addTarget { _ in
-            Task { @MainActor [weak self] in
-                self?.skipToNextChapter()
-            }
-            return .success
-        }
-
-        commandCenter.previousTrackCommand.isEnabled = true
-        commandCenter.previousTrackCommand.addTarget { _ in
-            Task { @MainActor [weak self] in
-                self?.skipToPreviousChapter()
-            }
-            return .success
-        }
+        commandCenter.nextTrackCommand.isEnabled = false
+        commandCenter.previousTrackCommand.isEnabled = false
 
         isRemoteCommandCenterConfigured = true
         #endif
