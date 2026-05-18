@@ -389,14 +389,18 @@ final class BiblePlayerViewModel: ObservableObject {
         guard isPlaying, let currentItem = player.currentItem else { return }
 
         let items = player.items()
-        guard let index = items.firstIndex(where: { $0 === currentItem }),
-              index + 1 < items.count else {
+        guard let index = items.firstIndex(where: { $0 === currentItem }) else { return }
+
+        if index + 1 < items.count {
+            player.advanceToNextItem()
+            AccessibilitySupport.haptic(.chapterChange)
+            handlePotentialQueueItemTransition()
             return
         }
 
-        player.advanceToNextItem()
+        guard let firstChapter = currentPlayingChapter?.gospel.chapters.first else { return }
+        play(firstChapter)
         AccessibilitySupport.haptic(.chapterChange)
-        handlePotentialQueueItemTransition()
     }
 
     func skipToPreviousChapter() {
@@ -413,9 +417,16 @@ final class BiblePlayerViewModel: ObservableObject {
             return
         }
 
-        guard chapter.number > 1 else { return }
-        let previous = chapter.gospel.chapters[chapter.number - 2]
-        play(previous)
+        if chapter.number > 1 {
+            let previous = chapter.gospel.chapters[chapter.number - 2]
+            play(previous)
+            AccessibilitySupport.haptic(.chapterChange)
+            return
+        }
+
+        guard let lastChapter = chapter.gospel.chapters.last else { return }
+        play(lastChapter)
+        AccessibilitySupport.haptic(.chapterChange)
     }
 
     /// Called when the app moves between foreground, inactive, or background while playback should continue (e.g. screen lock).
