@@ -53,7 +53,7 @@ struct PlaybackGlassMenu: View {
         .buttonStyle(.plain)
         .foregroundStyle(Color.accentColor)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("재생")
+        .accessibilityLabel(isPlaying ? "정지" : "재생")
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("playback-button")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
