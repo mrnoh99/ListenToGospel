@@ -108,7 +108,14 @@ struct ListenToGospelShortcuts: AppShortcutsProvider {
             intent: PlayBibleChapterIntent(),
             phrases: [
                 "\(\.$chapter) in \(.applicationName)",
-                "\(\.$chapter) 재생 in \(.applicationName)"
+                "\(\.$chapter) 재생 in \(.applicationName)",
+                "\(\.$chapter) 틀어줘 in \(.applicationName)",
+                "\(\.$chapter) 들려줘 in \(.applicationName)",
+                "\(.applicationName) \(\.$chapter) 틀어줘",
+                "\(.applicationName) \(\.$chapter) 들려줘",
+                "\(.applicationName)에서 \(\.$chapter) 틀어줘",
+                "\(.applicationName)에서 \(\.$chapter) 들려줘",
+                "\(.applicationName)에서 \(\.$chapter) 재생"
             ],
             shortTitle: "복음 챕터 재생",
             systemImageName: "play.fill"
@@ -129,7 +136,11 @@ struct ListenToGospelShortcuts: AppShortcutsProvider {
             phrases: [
                 "\(.applicationName)에서 이어서 재생",
                 "이어서 재생 in \(.applicationName)",
-                "\(.applicationName) 계속 재생"
+                "\(.applicationName) 계속 재생",
+                "\(.applicationName) 이어 들려줘",
+                "\(.applicationName) 이어서 틀어줘",
+                "\(.applicationName)에서 계속 들려줘",
+                "\(.applicationName)에서 다시 들려줘"
             ],
             shortTitle: "이어서 재생",
             systemImageName: "play.circle"
@@ -150,7 +161,11 @@ struct ListenToGospelShortcuts: AppShortcutsProvider {
             intent: StopPlaybackIntent(),
             phrases: [
                 "\(.applicationName) 정지",
-                "재생 정지 in \(.applicationName)"
+                "재생 정지 in \(.applicationName)",
+                "\(.applicationName) 멈춰",
+                "\(.applicationName) 그만",
+                "\(.applicationName)에서 정지",
+                "\(.applicationName)에서 멈춰"
             ],
             shortTitle: "재생 정지",
             systemImageName: "stop.fill"

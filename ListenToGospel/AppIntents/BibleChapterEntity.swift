@@ -47,11 +47,7 @@ struct BibleChapterEntityQuery: EntityQuery, EntityStringQuery {
     }
 
     func entities(matching string: String) async throws -> [BibleChapterEntity] {
-        let text = string
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "재생", with: "")
-            .replacingOccurrences(of: "들려줘", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = Self.stripVerbsAndParticles(from: string)
 
         guard let chapterNumber = extractChapterNumber(from: text) else { return [] }
 
@@ -64,6 +60,28 @@ struct BibleChapterEntityQuery: EntityQuery, EntityStringQuery {
             guard chapterNumber <= Bible.Gospel.chapterCount(for: gospel) else { return nil }
             return BibleChapterEntity(gospel: gospel, number: chapterNumber)
         }
+    }
+
+    /// Strip common Korean filler verbs/particles so Siri transcripts like
+    /// "요한복음서 3장 틀어줘" reduce to "요한복음서 3장".
+    private static let strippablePhrases: [String] = [
+        "틀어주세요", "틀어줘", "틀어",
+        "들려주세요", "들려줘", "들려",
+        "재생해주세요", "재생해줘", "재생",
+        "들어보자", "들어보고싶어", "듣고싶어", "들어볼래",
+        "플레이"
+    ]
+
+    private static func stripVerbsAndParticles(from string: String) -> String {
+        var text = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        for phrase in strippablePhrases {
+            text = text.replacingOccurrences(of: phrase, with: " ")
+        }
+        let collapsed = text
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+        return collapsed
     }
 
     private func extractChapterNumber(from text: String) -> Int? {
