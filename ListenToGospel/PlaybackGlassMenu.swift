@@ -67,6 +67,9 @@ struct PlaybackGlassMenu: View {
             .contentShape(Rectangle())
         }
         .modifier(MainPlayGlassStyle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("재생")
+        .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("playback-button")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
