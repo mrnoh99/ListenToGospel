@@ -27,29 +27,13 @@ struct PlaybackGlassMenu: View {
     }
 
     var body: some View {
-        Group {
-            if #available(iOS 26.0, *) {
-                GlassEffectContainer(spacing: 12) {
-                    menuButtons
-                }
-                .padding(.horizontal, menuHorizontalPadding)
-                .glassEffect(.regular.interactive(), in: .capsule)
-            } else {
-                menuButtons
-                    .padding(.horizontal, menuHorizontalPadding)
-                    .background {
-                        Capsule(style: .continuous)
-                            .fill(.ultraThinMaterial)
-                            .overlay {
-                                Capsule(style: .continuous)
-                                    .strokeBorder(.white.opacity(0.32), lineWidth: 0.75)
-                            }
-                            .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
-                    }
-            }
-        }
-        .frame(height: barHeight)
-        .frame(maxWidth: .infinity)
+        menuButtons
+            .frame(height: barHeight)
+            .frame(maxWidth: .infinity)
+            .modifier(GlassCapsuleSurfaceModifier(
+                horizontalPadding: menuHorizontalPadding,
+                cornerRadius: AppControlLayout.barCornerRadius
+            ))
     }
 
     private var menuButtons: some View {
@@ -66,28 +50,13 @@ struct PlaybackGlassMenu: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
         }
-        .modifier(MainPlayGlassStyle())
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.accentColor)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("재생")
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("playback-button")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-// MARK: - Button styles
-
-private struct MainPlayGlassStyle: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .buttonStyle(.glass)
-                .buttonBorderShape(.capsule)
-                .tint(Color.accentColor)
-        } else {
-            content
-                .foregroundStyle(Color.accentColor)
-        }
     }
 }
 
