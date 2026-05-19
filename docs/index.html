@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="가톨릭 4복음 듣기 iOS 앱 복음서듣기. VoiceOver·Voice Control·시리·햅틱·잠금 화면 이전·다음 장·이어 듣기 지원." />
+  <meta name="description" content="가톨릭 4복음 듣기 iOS 앱 복음서듣기. VoiceOver·Voice Control·시리·햅틱·잠금 화면 재생 제어·이어 듣기 지원." />
   <title>복음서듣기 — 가톨릭 복음 듣기 · VoiceOver · 시리</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="canonical" href="./" />
@@ -40,9 +40,21 @@
       <ul class="features">
         <li><strong>햅틱 피드백</strong>: 재생·정지·장이 바뀔 때 짧은 진동으로 상태를 확인합니다.</li>
         <li><strong>Voice Control</strong>: 「재생 탭」「마태오 탭」처럼 음성만으로 버튼을 누를 수 있습니다.</li>
-        <li><strong>VoiceOver 제목(Rotor)</strong>: 「복음 선택」「장 목록」「재생 제어」로 구역을 나누어 탐색이 빠릅니다.</li>
+        <li><strong>VoiceOver 포커스 순서</strong>: 타이틀 → 복음서 그리드(4개) → 타이머 → 재생 → 장 목록 순으로 탐색되어 혼란이 없습니다.</li>
+        <li><strong>VoiceOver 명확한 라벨</strong>: 타이머는 「타이머, 버튼」, 재생 버튼은 상태에 따라 「재생, 버튼」 또는 「정지, 버튼」으로 읽어 줍니다.</li>
         <li><strong>이어 듣기 제안</strong>: 앱을 다시 열면 「이어서 마태오 5장 재생」을 한 번 탭해 이전 위치에서 재개합니다.</li>
-        <li><strong>잠금 화면·제어 센터</strong>: 재생 중 잠금 화면에서 <strong>이전 곡·다음 곡</strong>으로 장을 넘길 수 있습니다.</li>
+        <li><strong>잠금 화면·제어 센터</strong>: 재생 중 잠금 화면에서 재생·정지를 조작할 수 있습니다.</li>
+      </ul>
+    </section>
+
+    <section class="accessibility-callout" id="whats-new" aria-labelledby="whats-new-heading">
+      <h2 id="whats-new-heading">최근 업데이트</h2>
+      <ul class="features">
+        <li><strong>복음서 탭 전환 중 재생 유지</strong>: 재생 중에 마태오·마르코·루카·요한 그리드에서 다른 복음서를 눌러도 현재 듣고 있는 장은 끊기지 않고 계속 재생됩니다.</li>
+        <li><strong>큰 글씨의 복음서 그리드와 재생 버튼</strong>: 그리드 크기는 그대로 유지하면서 글자만 크게 키워 가독성을 높였습니다.</li>
+        <li><strong>타이머 바 전체 터치</strong>: 「마태오복음서」 텍스트 영역을 포함해 캡슐 바 어디를 눌러도 수면 타이머 설정이 열립니다.</li>
+        <li><strong>리퀴드 글래스 효과 확장</strong>: 장 목록이 타이머·재생 버튼 뒤까지 확장되어, 두 캡슐 모두 아래 콘텐츠가 비치는 동일한 투명도로 표시됩니다.</li>
+        <li><strong>시리 자연어 명령 확대</strong>: 「복음서듣기에서 요한복음서 3장 틀어줘」 「복음서듣기 마르코 5장 들려줘」 「복음서듣기 멈춰」 등 더 자연스러운 한국어 동사를 인식합니다.</li>
       </ul>
     </section>
 
@@ -64,7 +76,7 @@
       <h2 id="siri-heading">시리 · 단축어로 말로 실행</h2>
       <p>
         App Intents를 지원합니다. 아래처럼 말하면 앱이 해당 동작을 수행합니다.
-        처음 사용 전에 앱을 한 번 실행해 주세요.
+        처음 사용 전에 앱을 한 번 실행해 주세요. 모든 명령에는 앱 이름 <strong>「복음서듣기」</strong>가 포함되어야 합니다.
       </p>
       <div class="phrase-table-wrap">
         <table class="phrase-table">
@@ -77,25 +89,34 @@
           </thead>
           <tbody>
             <tr>
-              <th scope="row"><code>복음서듣기에서 마태오 3장 재생</code></th>
+              <th scope="row"><code>복음서듣기에서 요한복음서 3장 틀어줘</code></th>
               <td>해당 장 재생</td>
             </tr>
             <tr>
-              <th scope="row"><code>이어서 재생</code> (앱 이름 포함)</th>
+              <th scope="row"><code>복음서듣기에서 마태오 5장 들려줘</code></th>
+              <td>해당 장 재생 (짧은 이름)</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>복음서듣기 마르코복음서 1장 재생</code></th>
+              <td>해당 장 재생</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>복음서듣기 이어 들려줘</code></th>
               <td>정지 위치에서 이어 듣기</td>
             </tr>
             <tr>
-              <th scope="row"><code>수면 타이머 30분</code></th>
+              <th scope="row"><code>복음서듣기 수면 타이머 30분</code></th>
               <td>30분 후 자동 정지</td>
             </tr>
             <tr>
-              <th scope="row"><code>복음서듣기 정지</code></th>
+              <th scope="row"><code>복음서듣기 멈춰</code> / <code>복음서듣기 그만</code></th>
               <td>재생 정지</td>
             </tr>
           </tbody>
         </table>
       </div>
       <p style="font-size: 0.95rem; color: var(--muted); margin-top: 1rem;">
+        지원되는 동사: <code>틀어줘</code> · <code>들려줘</code> · <code>재생</code> · <code>플레이</code>.
         60·90·120분 타이머는 <strong>단축어</strong> 앱에서 「수면 타이머 설정」을 추가해 선택할 수 있습니다.
         자세한 안내는 <a href="support.html#siri">지원 페이지</a>를 참고해 주세요.
       </p>
@@ -107,7 +128,7 @@
         <li><strong>VoiceOver 지원</strong>: 복음·장·재생·수면 타이머를 음성으로 탐색·조작</li>
         <li><strong>시리·단축어</strong>: 말로 장 재생, 이어 듣기, 수면 타이머, 정지</li>
         <li><strong>Voice Control</strong>: 「재생 탭」「마태오 탭」 등 음성 명령으로 조작</li>
-        <li><strong>햅틱·이어 듣기 제안·잠금 화면 이전·다음 장</strong> (<a href="#accessibility-features">자세히</a>)</li>
+        <li><strong>햅틱·이어 듣기 제안·잠금 화면 재생 제어</strong> (<a href="#accessibility-features">자세히</a>)</li>
         <li>4복음서중 원하는 복음과 장 선택 후 재생</li>
         <li>선택한 장부터 복음 끝까지 연속 재생</li>
         <li>지금 재생 중인 장을 목록에서 쉽게 확인</li>
