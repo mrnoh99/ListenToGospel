@@ -23,12 +23,12 @@
       </p>
       <ul class="features">
         <li><strong>복음 선택</strong>: 마태오·마르코·루카·요한 버튼 이름과 선택 상태 읽기</li>
-        <li><strong>장 목록</strong>: 각 장 제목, 재생 중·선택됨 상태, 경과·전체 재생 시간(말로 안내)</li>
-        <li><strong>재생·정지</strong>: 재생·정지 버튼, 정지 후 이어 듣기 안내</li>
-        <li><strong>수면 타이머</strong>: 타이머 설정·남은 시간 음성 안내</li>
-        <li><strong>상태 알림</strong>: 재생 시작·정지·복음 변경·타이머 변경 시 음성 알림</li>
-        <li><strong>제목(Rotor) 구조</strong>: 「복음 선택」「장 목록」「재생 제어」 제목으로 빠르게 이동</li>
-        <li><strong>시리·단축어</strong>: 말로 장 재생·이어 듣기·수면 타이머·정지 (<a href="#siri">안내</a>)</li>
+        <li><strong>장 목록</strong>: 「마태오복음서 삼장」처럼 장 번호를 <strong>일·이·삼</strong>으로 읽고, 재생 중·이어보기 진행률을 말로 안내</li>
+        <li><strong>재생·정지</strong>: 「마태오복음서 오장 재생 버튼」 / 「… 중지 버튼」처럼 복음·장·동작을 한꺼번에 읽음</li>
+        <li><strong>수면 타이머</strong>: 「타이머 버튼」으로 읽음. 바 왼쪽 복음서 이름은 VoiceOver 포커스에서 제외</li>
+        <li><strong>상태 알림</strong>: 재생 시작·정지·복음 변경·타이머 변경 시 햅틱·짧은 시스템 소리</li>
+        <li><strong>탐색 순서</strong>: 앱 제목 → 복음 그리드 → 수면 타이머 바 → 재생 바 → 장 목록</li>
+        <li><strong>시리·단축어</strong>: 말로 장 재생·이어 듣기·수면 타이머·정지 (<a href="#siri">안내</a>). 시리 사용 후에도 재생이 자동으로 이어짐</li>
       </ul>
       <p><strong>켜는 방법</strong></p>
       <p>
@@ -39,6 +39,18 @@
         VoiceOver 사용에 익숙하지 않으시면 Apple의
         <a href="https://support.apple.com/ko-kr/guide/iphone/iph3e2e415f/ios" rel="noopener noreferrer">iPhone VoiceOver 사용 설명서</a>도 참고해 주세요.
       </p>
+    </section>
+
+    <section id="how-it-works">
+      <h2>작동법</h2>
+      <ol class="features" style="list-style: decimal; padding-left: 1.25rem;">
+        <li><strong>복음 고르기</strong>: 화면 위쪽 2×2 버튼(마태오·마르코·루카·요한)을 탭합니다.</li>
+        <li><strong>장 고르기</strong>: 스크롤 목록에서 원하는 장을 탭하면 재생이 시작됩니다.</li>
+        <li><strong>재생·정지</strong>: 화면 아래 「재생」 캡슐 바를 탭합니다. 한 번 누르면 재생, 재생 중이면 정지합니다.</li>
+        <li><strong>수면 타이머</strong>: 복음 그리드 바로 아래 글래스 캡슐 바 <strong>전체</strong>(왼쪽 복음서 이름 포함)를 탭해 시간을 고릅니다.</li>
+        <li><strong>이어 듣기</strong>: 정지한 뒤 같은 실행에서 「재생」을 누르거나, 앱을 다시 열어 「이어서 … 재생」을 탭합니다.</li>
+        <li><strong>잠금 화면</strong>: 재생 중에는 잠금 화면·이어폰에서도 재생·일시정지할 수 있습니다.</li>
+      </ol>
     </section>
 
     <section class="accessibility-callout" id="accessibility-features" aria-labelledby="accessibility-features-heading">
@@ -88,6 +100,10 @@
             </tr>
           </thead>
           <tbody>
+            <tr>
+              <th scope="row"><code>복음서듣기 열어줘</code> / <code>복음서듣기 실행해줘</code></th>
+              <td>앱 실행</td>
+            </tr>
             <tr>
               <th scope="row"><code>복음서듣기에서 요한복음서 3장 틀어줘</code></th>
               <td>해당 장 재생</td>
@@ -209,9 +225,27 @@
       <div class="faq-item">
         <strong>수면 타이머는 어떻게 동작하나요?</strong>
         <p>
-          화면 상단의 <strong>수면 타이머</strong> 버튼에서 원하는 시간(30·60·90·120분)이나 &lsquo;계속&rsquo;을 고릅니다.
+          복음 그리드 아래 <strong>수면 타이머 캡슐 바 전체</strong>(왼쪽 「마태오복음서」 글자 영역 포함)를 탭하면 설정 창이 열립니다.
+          30·60·90·120분 또는 &lsquo;계속&rsquo;을 고릅니다.
           타이머는 <strong>재생 중일 때만</strong> 만료 시 자동으로 멈추며, &lsquo;계속&rsquo;이면 밤새 재생됩니다.
-          남은 시간은 제목 옆에 표시됩니다.
+          남은 시간은 바 오른쪽에 표시됩니다.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <strong>시리를 쓰면 「다른 앱의 오디오…」 메시지가 나와요.</strong>
+        <p>
+          예전 버전에서는 시리가 마이크를 쓸 때 잠깐 재생이 멈추며 해당 안내가 표시될 수 있었습니다.
+          최신 버전에서는 <strong>안내 없이</strong> 잠시 멈췄다가 시리가 끝나면 <strong>자동으로 이어 재생</strong>됩니다.
+          계속 문제가 있으면 앱을 최신 버전으로 업데이트해 주세요.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <strong>VoiceOver에서 장 번호가 「둘」이 아니라 「이」로 읽히나요?</strong>
+        <p>
+          네. 성경 장수에 맞게 <strong>일·이·삼·사…</strong>으로 읽도록 맞춰 두었습니다.
+          예: 2장 → 「이장」, 12장 → 「십이장」. 재생 버튼·장 목록·이어 듣기 제안에 동일하게 적용됩니다.
         </p>
       </div>
 
