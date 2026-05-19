@@ -27,15 +27,15 @@ struct GospelHeaderGlassBar<SleepTimerLabel: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Text(gospelName)
-                .font(AppControlTypography.labelFont)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityHidden(true)
+        Button(action: onSleepTimerTap) {
+            HStack(alignment: .center, spacing: 12) {
+                Text(gospelName)
+                    .font(AppControlTypography.labelFont)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityHidden(true)
 
-            Button(action: onSleepTimerTap) {
                 Label {
                     sleepTimerLabel()
                         .monospacedDigit()
@@ -46,15 +46,17 @@ struct GospelHeaderGlassBar<SleepTimerLabel: View>: View {
                 }
                 .font(AppControlTypography.labelFont)
                 .labelStyle(.titleAndIcon)
+                .fixedSize(horizontal: true, vertical: false)
             }
-            .buttonStyle(.plain)
-            .fixedSize(horizontal: true, vertical: false)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("타이머")
-            .accessibilityAddTraits(.isButton)
-            .accessibilityIdentifier("sleep-timer-button")
+            .frame(maxWidth: .infinity)
+            .frame(height: barHeight)
+            .contentShape(Rectangle())
         }
-        .frame(height: barHeight)
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("타이머")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("sleep-timer-button")
         .modifier(GlassCapsuleSurfaceModifier(
             horizontalPadding: horizontalPadding,
             cornerRadius: AppControlLayout.barCornerRadius
