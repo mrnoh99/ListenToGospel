@@ -59,9 +59,6 @@ struct GospelHeaderGlassBar<SleepTimerLabel: View>: View {
         .accessibilityLabel(AccessibilitySupport.sleepTimerButtonLabel)
         .accessibilityRemoveTraits(.isButton)
         .accessibilityHint("수면 타이머를 설정합니다")
-        .accessibilityAction {
-            performSleepTimerTap()
-        }
         .accessibilityIdentifier("sleep-timer-button")
         .modifier(GlassCapsuleSurfaceModifier(
             horizontalPadding: horizontalPadding,

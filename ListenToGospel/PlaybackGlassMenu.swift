@@ -58,9 +58,6 @@ struct PlaybackGlassMenu: View {
         .accessibilityLabel(AccessibilitySupport.playbackButtonLabel(chapterTitle: chapterTitle, isPlaying: isPlaying))
         .accessibilityRemoveTraits(.isButton)
         .accessibilityHint(isPlaying ? "재생을 멈춥니다" : "선택한 장을 재생합니다")
-        .accessibilityAction {
-            onPlayStop()
-        }
         .accessibilityIdentifier("playback-button")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

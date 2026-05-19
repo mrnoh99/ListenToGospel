@@ -92,6 +92,7 @@ final class BiblePlayerViewModel: ObservableObject {
     private var isAudioInterruptionObserverRegistered = false
     /// Set when Siri or the system briefly interrupts playback; cleared after resume or stop.
     private var shouldResumeAfterAudioInterruption = false
+    private var audioSessionConfigurationTask: Task<Void, Never>?
 
     private struct PlaybackResumeBookmark {
         let chapter: BibleChapter
@@ -421,85 +422,74 @@ final class BiblePlayerViewModel: ObservableObject {
     private func configureAudioSession() {
         #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
         registerAudioInterruptionObserverOnce()
-        
-        // 앱 시작 시에는 더 안전하게 처리
-        Task {
-            // 앱 시작 시 오디오 세션이 준비될 때까지 대기
-            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3초 대기
-            
+
+        audioSessionConfigurationTask?.cancel()
+        audioSessionConfigurationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+
             do {
                 let session = AVAudioSession.sharedInstance()
-                
-                // 현재 오디오 세션 상태 확인 - 불필요한 변경 방지
                 let currentCategory = session.category
                 let currentMode = session.mode
-                
-                // 이미 올바른 설정이라면 세션 조작을 피함
+
                 if currentCategory == .playback && currentMode == .spokenAudio {
-                    await MainActor.run {
-                        if playbackMessage?.contains("오디오 설정 중 문제가 발생했습니다") == true {
-                            playbackMessage = nil
-                        }
+                    if playbackMessage?.contains("오디오 설정 중 문제가 발생했습니다") == true {
+                        playbackMessage = nil
                     }
                     return
                 }
-                
-                // 앱 시작 시에는 매우 안전한 설정만 적용
+
                 try session.setCategory(.playback, mode: .default, options: [])
-                
-                // 세션 활성화 시도 (실패해도 앱 시작을 방해하지 않음)
+
                 do {
                     try session.setActive(true)
-                    
-                    // 성공한 경우에만 더 구체적인 설정 적용
-                    try session.setCategory(.playback, mode: .spokenAudio, options: [.allowBluetoothA2DP, .mixWithOthers])
-                    
+                    try session.setCategory(
+                        .playback,
+                        mode: .spokenAudio,
+                        options: [.allowBluetoothA2DP, .mixWithOthers]
+                    )
                 } catch {
-                    // 활성화에 실패해도 기본 카테고리는 설정되었으므로 진행
+                    #if DEBUG
                     print("오디오 세션 활성화 지연됨: \(error)")
+                    #endif
                 }
-                
-                // 성공하면 기존 에러 메시지 제거
-                await MainActor.run {
-                    if playbackMessage?.contains("오디오 설정 중 문제가 발생했습니다") == true ||
-                       playbackMessage?.contains("오디오 세션 설정에 실패했습니다") == true {
-                        playbackMessage = nil
-                    }
+
+                if playbackMessage?.contains("오디오 설정 중 문제가 발생했습니다") == true ||
+                    playbackMessage?.contains("오디오 세션 설정에 실패했습니다") == true {
+                    playbackMessage = nil
                 }
-                
             } catch let error as NSError {
-                await MainActor.run {
-                    // 앱 시작 시에는 오류 메시지를 표시하지 않음 (사용자가 재생을 시도할 때까지)
-                    print("앱 시작 시 오디오 세션 설정 지연됨: \(error)")
-                    
-                    // 실제 재생 시도 시에만 오류 메시지 표시
-                    if isPlaying {
-                        let errorMessage: String
-                        
-                        if let avError = error as? AVError {
-                            switch avError.code {
-                            case .applicationIsNotAuthorized:
-                                errorMessage = "오디오 권한이 없습니다. 설정에서 권한을 확인해주세요."
-                            default:
-                                errorMessage = "오디오 설정 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
-                            }
-                        } else {
-                            // 일반적인 오디오 세션 오류 처리
-                            let description = error.localizedDescription.lowercased()
-                            if description.contains("interrupted") || description.contains("interrupt") {
-                                errorMessage = "다른 앱의 오디오 사용으로 중단되었습니다. 잠시 후 다시 시도해주세요."
-                            } else if description.contains("resource") || description.contains("busy") {
-                                errorMessage = "오디오 리소스를 사용할 수 없습니다. 다른 앱 종료 후 시도해주세요."
-                            } else if description.contains("category") || description.contains("mode") {
-                                errorMessage = "오디오 설정을 변경할 수 없습니다. 잠시 후 다시 시도해주세요."
-                            } else {
-                                errorMessage = "오디오 설정 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
-                            }
-                        }
-                        
-                        playbackMessage = errorMessage
+                #if DEBUG
+                print("오디오 세션 설정 지연됨: \(error)")
+                #endif
+
+                guard isPlaying else { return }
+
+                let errorMessage: String
+                if let avError = error as? AVError {
+                    switch avError.code {
+                    case .applicationIsNotAuthorized:
+                        errorMessage = "오디오 권한이 없습니다. 설정에서 권한을 확인해주세요."
+                    default:
+                        errorMessage = "오디오 설정 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+                    }
+                } else {
+                    let description = error.localizedDescription.lowercased()
+                    if description.contains("interrupted") || description.contains("interrupt") {
+                        errorMessage = "다른 앱의 오디오 사용으로 중단되었습니다. 잠시 후 다시 시도해주세요."
+                    } else if description.contains("resource") || description.contains("busy") {
+                        errorMessage = "오디오 리소스를 사용할 수 없습니다. 다른 앱 종료 후 시도해주세요."
+                    } else if description.contains("category") || description.contains("mode") {
+                        errorMessage = "오디오 설정을 변경할 수 없습니다. 잠시 후 다시 시도해주세요."
+                    } else {
+                        errorMessage = "오디오 설정 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
                     }
                 }
+
+                playbackMessage = errorMessage
             }
         }
         #endif

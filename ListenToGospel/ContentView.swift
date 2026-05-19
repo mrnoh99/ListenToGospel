@@ -86,6 +86,9 @@ struct ContentView: View {
             chapterListWithFloatingControls
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+            launchResumeOfferBanner
+                .padding(.top, 4)
+
             playbackMessage
                 .padding(.top, 4)
 
@@ -341,6 +344,22 @@ struct ContentView: View {
             }
         )
         .accessibilitySortPriority(20)
+    }
+
+    @ViewBuilder
+    private var launchResumeOfferBanner: some View {
+        if let offer = player.launchResumeOffer, !player.isPlaying {
+            Button {
+                _ = player.resumeFromLaunchOffer()
+            } label: {
+                Label(offer.buttonTitle, systemImage: "play.circle.fill")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityLabel(offer.accessibilityLabel)
+            .accessibilityIdentifier("launch-resume-offer")
+        }
     }
 
     @ViewBuilder
@@ -667,7 +686,7 @@ private struct MainChromeModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onChange(of: scenePhase) { _, newPhase in
-                if newPhase == .active || newPhase == .inactive || newPhase == .background {
+                if newPhase == .active {
                     reassertPlayback()
                 }
             }

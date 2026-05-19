@@ -45,7 +45,7 @@
 >
 > **시리·단축어(App Intents)**: 「복음서듣기에서 마태오 3장 재생」, 「이어서 재생」, 「수면 타이머 30분」, 「복음서듣기 정지」. [말하기 예시 표](https://mrnoh99.github.io/ListenToGospel/#siri)
 >
-> **손쉬운 사용**: 재생·정지·장 변경 **햅틱** · **Voice Control**(「재생 탭」「마태오 탭」) · 앱 실행 시 **이어 듣기 제안** · 잠금 화면 **이전·다음 장**. [자세히](https://mrnoh99.github.io/ListenToGospel/#accessibility-features)
+> **손쉬운 사용**: 재생·정지·장 변경 **햅틱** · **Voice Control**(「재생 탭」「마태오 탭」) · 앱 실행 시 **이어 듣기 제안** · 잠금 화면 **재생·일시정지**. [자세히](https://mrnoh99.github.io/ListenToGospel/#accessibility-features)
 
 ### 시리 · 단축어 (말하기 예시)
 
@@ -64,7 +64,7 @@
 | Voice Control | 「재생 탭」「마태오 탭」처럼 음성으로 버튼 조작 |
 | VoiceOver 제목(Rotor) | 「복음 선택」「장 목록」「재생 제어」 구역별 탐색 |
 | 이어 듣기 제안 | 앱 재실행 시 「이어서 마태오 5장 재생」 한 번 탭으로 재개 |
-| 잠금 화면 | 재생 중 이전 곡·다음 곡으로 장 넘기기 |
+| 잠금 화면 | 재생 중 잠금 화면·이어폰에서 재생·일시정지 |
 
 ## 라이선스 · 저작권
 
