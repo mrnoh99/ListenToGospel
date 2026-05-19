@@ -42,8 +42,10 @@ struct PlaybackGlassMenu: View {
                 Text(chapterTitle)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
+                    .accessibilityHidden(true)
             } icon: {
                 Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+                    .accessibilityHidden(true)
             }
             .font(AppControlTypography.prominentLabelFont)
             .labelStyle(.titleAndIcon)
@@ -52,9 +54,13 @@ struct PlaybackGlassMenu: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(Color.accentColor)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(isPlaying ? "정지" : "재생")
-        .accessibilityAddTraits(.isButton)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(AccessibilitySupport.playbackButtonLabel(chapterTitle: chapterTitle, isPlaying: isPlaying))
+        .accessibilityRemoveTraits(.isButton)
+        .accessibilityHint(isPlaying ? "재생을 멈춥니다" : "선택한 장을 재생합니다")
+        .accessibilityAction {
+            onPlayStop()
+        }
         .accessibilityIdentifier("playback-button")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

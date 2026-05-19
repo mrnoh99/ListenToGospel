@@ -243,7 +243,6 @@ struct ContentView: View {
             barHeight: controlBarHeight,
             gospelName: player.selectedGospel.koreanName,
             onSleepTimerTap: {
-                AccessibilitySupport.haptic(.selection)
                 player.recordBrowseInteractionWhilePlaying()
                 isSleepTimerPickerPresented = true
             },
@@ -257,16 +256,12 @@ struct ContentView: View {
     private var sleepTimerButtonLabel: some View {
         if player.sleepTimerOption == .continuous {
             Text("남은시간: ∞")
-                .accessibilityLabel("연속 재생")
         } else if let endDate = player.sleepTimerEndDate {
             TimelineView(.periodic(from: .now, by: 1)) { timeline in
-                let countdown = sleepTimerCountdownText(until: endDate, now: timeline.date)
-                Text("남은시간: \(countdown)")
-                    .accessibilityLabel("남은시간 \(countdown)")
+                Text("남은시간: \(sleepTimerCountdownText(until: endDate, now: timeline.date))")
             }
         } else {
             Text("남은시간: \(player.sleepTimerOption.title)")
-                .accessibilityLabel("타이머 설정 \(player.sleepTimerOption.title)")
         }
     }
 
@@ -463,6 +458,8 @@ private struct ChapterListRowView: View {
             .buttonStyle(.plain)
             .listRowInsets(rowInsets)
             .listRowBackground(rowBackground)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(AccessibilitySupport.spokenChapterTitle(for: chapter))
             .accessibilityIdentifier(chapter.id)
             .accessibilitySortPriority(10)
             .modifier(AccessibilityProgressModifier(progressText: accessibilityProgressText))
@@ -488,6 +485,7 @@ private struct ChapterListRowView: View {
             Text(chapter.title)
                 .fontWeight(isActiveChapter ? .semibold : .regular)
                 .lineLimit(1)
+                .accessibilityHidden(true)
 
             if showsPlaybackTime {
                 Text(playbackElapsedAndTotalLabel)

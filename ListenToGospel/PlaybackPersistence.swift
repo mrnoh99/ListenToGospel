@@ -59,6 +59,6 @@ struct LaunchResumeOffer: Equatable {
     }
 
     var accessibilityLabel: String {
-        "이어서 \(chapter.title) 재생할까요? \(AccessibilitySupport.spokenDuration(elapsedSeconds)) 위치에서 이어 듣기"
+        "이어서 \(AccessibilitySupport.spokenChapterTitle(for: chapter)) 재생할까요? \(AccessibilitySupport.spokenDuration(elapsedSeconds)) 위치에서 이어 듣기"
     }
 }

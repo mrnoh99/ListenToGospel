@@ -27,7 +27,7 @@ struct GospelHeaderGlassBar<SleepTimerLabel: View>: View {
     }
 
     var body: some View {
-        Button(action: onSleepTimerTap) {
+        Button(action: performSleepTimerTap) {
             HStack(alignment: .center, spacing: 12) {
                 Text(gospelName)
                     .font(AppControlTypography.labelFont)
@@ -41,8 +41,10 @@ struct GospelHeaderGlassBar<SleepTimerLabel: View>: View {
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
+                        .accessibilityHidden(true)
                 } icon: {
                     Image(systemName: "timer")
+                        .accessibilityHidden(true)
                 }
                 .font(AppControlTypography.labelFont)
                 .labelStyle(.titleAndIcon)
@@ -53,14 +55,23 @@ struct GospelHeaderGlassBar<SleepTimerLabel: View>: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("타이머")
-        .accessibilityAddTraits(.isButton)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(AccessibilitySupport.sleepTimerButtonLabel)
+        .accessibilityRemoveTraits(.isButton)
+        .accessibilityHint("수면 타이머를 설정합니다")
+        .accessibilityAction {
+            performSleepTimerTap()
+        }
         .accessibilityIdentifier("sleep-timer-button")
         .modifier(GlassCapsuleSurfaceModifier(
             horizontalPadding: horizontalPadding,
             cornerRadius: AppControlLayout.barCornerRadius
         ))
+    }
+
+    private func performSleepTimerTap() {
+        AccessibilitySupport.haptic(.selection)
+        onSleepTimerTap()
     }
 }
 
