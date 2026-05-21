@@ -1,0 +1,13 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Audio assets (large binary files - copy manually from ListenToGospel iOS project)
+app/src/main/assets/AudioFiles/
