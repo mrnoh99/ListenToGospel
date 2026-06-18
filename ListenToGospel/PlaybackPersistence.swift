@@ -53,12 +53,4 @@ enum PlaybackPersistence {
 struct LaunchResumeOffer: Equatable {
     let chapter: BibleChapter
     let elapsedSeconds: TimeInterval
-
-    var buttonTitle: String {
-        "이어서 \(chapter.shortTitle) 재생"
-    }
-
-    var accessibilityLabel: String {
-        "이어서 \(AccessibilitySupport.spokenChapterTitle(for: chapter)) 재생할까요? \(AccessibilitySupport.spokenDuration(elapsedSeconds)) 위치에서 이어 듣기"
-    }
 }
