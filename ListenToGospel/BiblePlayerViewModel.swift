@@ -310,7 +310,10 @@ final class BiblePlayerViewModel: ObservableObject {
         updateNowPlayingInfo()
     }
 
-    func stop() {
+    /// Stops playback. `playsFeedback` should be `false` for automatic stops (e.g. the sleep
+    /// timer expiring) so the app quietly ends without the stop haptic/system sound that would
+    /// otherwise fire like a device timer-end alert. User-initiated stops keep the feedback.
+    func stop(playsFeedback: Bool = true) {
         cancelNavigationSnapBack()
         shouldResumeAfterAudioInterruption = false
         var pausedElapsed: TimeInterval = 0
@@ -348,7 +351,9 @@ final class BiblePlayerViewModel: ObservableObject {
             persistPlayback(from: bookmark.chapter, elapsedSeconds: CMTimeGetSeconds(bookmark.time))
         }
 
-        AccessibilitySupport.haptic(.stop)
+        if playsFeedback {
+            AccessibilitySupport.haptic(.stop)
+        }
         refreshLaunchResumeOffer()
     }
 
@@ -951,7 +956,9 @@ final class BiblePlayerViewModel: ObservableObject {
                 return
             }
 
-            self?.stop()
+            // Sleep timer expiry: quietly stop the app's playback only, without the stop
+            // haptic/system sound that would otherwise disturb the listener like a timer alert.
+            self?.stop(playsFeedback: false)
         }
     }
 
