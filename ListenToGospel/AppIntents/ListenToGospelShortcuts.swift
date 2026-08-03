@@ -95,7 +95,9 @@ struct StopPlaybackIntent: AppIntent {
             guard store.viewModel.isPlaying else {
                 return "재생 중이 아닙니다."
             }
-            store.viewModel.stop()
+            // Siri already speaks its own confirmation, so stop quietly without the
+            // stop haptic/system sound.
+            store.viewModel.stop(playsFeedback: false)
             return "재생을 정지했습니다."
         }
         return .result(dialog: IntentDialog(stringLiteral: message))
