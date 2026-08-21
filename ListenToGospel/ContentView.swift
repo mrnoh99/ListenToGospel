@@ -11,6 +11,7 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var player = BiblePlayerStore.shared.viewModel
     @State private var isSleepTimerPickerPresented = false
+    @State private var isSettingsPresented = false
     @State private var controlsHeaderBottomOffset: CGFloat = 0
     @ScaledMetric(relativeTo: .body) private var chapterListRowMinHeight: CGFloat = 58
     @ScaledMetric(relativeTo: .body) private var chapterListRowVerticalInset: CGFloat = 12
@@ -61,6 +62,9 @@ struct ContentView: View {
                 reassertPlayback: { player.reassertAudioPlaybackIfNeeded() }
             ))
             .onPreferenceChange(ControlsHeaderBottomOffsetKey.self) { controlsHeaderBottomOffset = $0 }
+            .sheet(isPresented: $isSettingsPresented) {
+                AppSettingsView()
+            }
     }
 
     /// Top scroll inset: keeps chapter rows below the title and 2×2 grid (no overlap with 「복음서듣기」).
@@ -106,11 +110,25 @@ struct ContentView: View {
     }
 
     private var appTitleView: some View {
-        Text("복음서듣기")
-            .font(.largeTitle.bold())
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityAddTraits(.isHeader)
-            .accessibilitySortPriority(50)
+        HStack(alignment: .center, spacing: 12) {
+            Text("복음서듣기")
+                .font(.largeTitle.bold())
+                .accessibilityAddTraits(.isHeader)
+                .accessibilitySortPriority(50)
+
+            Spacer()
+
+            Button {
+                isSettingsPresented = true
+            } label: {
+                Image(systemName: "gear")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("설정")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Title + gospel grid + sleep timer; measured height is the chapter list top inset.
