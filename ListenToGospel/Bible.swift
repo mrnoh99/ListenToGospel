@@ -7,6 +7,16 @@
 
 import Foundation
 
+struct BibleBook: Identifiable, Hashable, Sendable {
+    let id: String
+    let name: String
+    let shortName: String
+    let abbrev: String
+    let chapterCount: Int
+
+    func chapterLabel(_ chapter: Int) -> String { "\(chapter)장" }
+}
+
 struct Bible {
     enum Gospel: Int, CaseIterable, Identifiable, Hashable, Sendable {
         case matthew
@@ -120,6 +130,17 @@ struct Bible {
             return nil
         }
     }
+
+    static let books: [BibleBook] = [
+        BibleBook(id: "matthew", name: "마태오 복음", shortName: "마태오", abbrev: "마태", chapterCount: 28),
+        BibleBook(id: "mark", name: "마르코 복음", shortName: "마르코", abbrev: "마르", chapterCount: 16),
+        BibleBook(id: "luke", name: "루카 복음", shortName: "루카", abbrev: "루카", chapterCount: 24),
+        BibleBook(id: "john", name: "요한 복음", shortName: "요한", abbrev: "요한", chapterCount: 21),
+    ]
+
+    static let booksByID: [String: BibleBook] = Dictionary(uniqueKeysWithValues: books.map { ($0.id, $0) })
+
+    static func book(_ id: String) -> BibleBook? { booksByID[id] }
 }
 
 struct BibleChapter: Identifiable, Hashable, Sendable {
