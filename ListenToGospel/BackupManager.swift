@@ -6,7 +6,11 @@
 //
 
 import Foundation
+#if os(iOS)
 import UIKit
+#else
+import AppKit
+#endif
 
 enum BackupFrequency: String, CaseIterable {
     case daily = "매일"
@@ -127,10 +131,17 @@ final class BackupManager {
             }
 
             // 메타데이터 저장
+            let osVersion: String
+            #if os(iOS)
+            osVersion = UIDevice.current.systemVersion
+            #else
+            osVersion = ProcessInfo.processInfo.operatingSystemVersionString
+            #endif
+
             let metadata: [String: Any] = [
                 "date": ISO8601DateFormatter().string(from: Date()),
                 "appVersion": Bundle.main.appVersion,
-                "osVersion": UIDevice.current.systemVersion,
+                "osVersion": osVersion,
                 "bookmarksCount": annotationStore.sortedBookmarks.count,
                 "notesCount": annotationStore.notes.count
             ]
